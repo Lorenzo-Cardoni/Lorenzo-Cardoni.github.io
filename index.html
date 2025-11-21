@@ -8,45 +8,62 @@
 </head>
 <body class="bg-gray-50 text-gray-800">
   <!-- Navbar -->
-  <header class="fixed w-full bg-white shadow-md z-50">
+  <header class="fixed w-full bg-gradient-to-r from-blue-500 to-green-600 text-white shadow-md z-50">
     <nav class="container mx-auto flex justify-between items-center p-4">
       <h1 class="text-xl font-bold">Lorenzo Cardoni</h1>
       <ul class="flex space-x-6">
-        <li><a href="#about" class="hover:text-blue-500">About</a></li>
-        <li><a href="#projects" class="hover:text-blue-500">Projects</a></li>
-        <li><a href="#contact" class="hover:text-blue-500">Contacts</a></li>
+        <li><a href="#about" class="hover:text-yellow-500">About</a></li>
+        <li><a href="#projects" class="hover:text-yellow-500">Projects</a></li>
+        <!-- <li><a href="#contact" class="hover:text-yellow-500">Contacts</a></li> -->
       </ul>
     </nav>
   </header>
 
-  <!-- Hero -->
+  <!-- Hero
   <section class="h-screen flex items-center justify-center bg-gradient-to-r from-blue-500 to-green-600 text-white" id="home">
     <div class="text-center">
       <h2 class="text-4xl md:text-6xl font-bold mb-4">Hi, I'm <span class="text-yellow-300">Lorenzo Cardoni!</span></h2>
       <p class="text-lg md:text-2xl mb-6">Junior Engineer</p>
       <a href="#projects" class="bg-white text-blue-600 px-6 py-3 rounded-full shadow hover:bg-gray-200">Discover my projects</a>
     </div>
-  </section>
+  </section> -->
 
   <!-- About -->
   <section id="about" class="container mx-auto py-20 px-6">
-    <h3 class="text-3xl font-bold mb-6 text-center">About me</h3>
-    <p class="max-w-2xl mx-auto text-center text-lg text-gray-600">
-      I graduated at Università Politecnica delle Marche (UNIVPM):<br>
-
-      <strong>Bachelor’s Degree in Computer and Automation Engineering</strong><br>
-      <strong>Master’s Degree in Computer and Automation Engineering</strong><br><br>
-      My academic journey focused on Automation and Artificial Intelligence, with particular interest in Machine Learning, Deep Learning and Data Science. I have also studied hardware, such as microcontrollers, sensors, and motors.
-    </p>
+    <h3 class="text-3xl font-bold mb-12 text-center">About me</h3>
+  
+    <div class="flex flex-col md:flex-row items-center md:items-start gap-12 max-w-4xl mx-auto">
+  
+      <!-- Left column: Photo -->
+      <img 
+        src="img/busto.JPG" 
+        alt="Lorenzo Cardoni" 
+        class="w-48 h-48 object-cover rounded-full shadow-lg"
+      >
+  
+      <!-- Right column: Text -->
+      <p class="text-lg text-gray-600">
+        I graduated at Università Politecnica delle Marche (UNIVPM):<br><br>
+  
+        <strong>Bachelor’s Degree in Computer and Automation Engineering</strong><br>
+        <strong>Master’s Degree in Computer and Automation Engineering</strong><br><br>
+  
+        My academic journey focused on Automation and Artificial Intelligence, with particular interest in 
+        Machine Learning, Deep Learning and Data Science. I have also studied hardware, such as microcontrollers,
+        sensors, and motors.
+      </p>
+  
+    </div>
   </section>
+  
 
   <!-- Projects -->
   <section id="projects" class="bg-gray-100 py-20 px-6">
-    <h3 class="text-3xl font-bold mb-10 text-center">Projects</h3>
+    <h3 class="text-3xl font-bold mb-10 text-center">Academic Projects</h3>
     <div class="grid md:grid-cols-3 gap-8 container mx-auto">
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold mb-2">Object Detection with Super-Resolution for Small Objects</h4>
-        <img src="img/sryolo.png" alt="Project image" class="w-full h-100 object-cover rounded-lg mb-4">
+        <h4 class="text-xl font-semibold text-center mb-2">Object Detection with Super-Resolution for Small Objects</h4><br>
+        <img src="img/sryolo.png" alt="Project image" class="w-60 h-60 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">In the field of object detection, accurately identifying small objects remains a significant challenge. 
           This difficulty arises from the limited and distorted data present in small regions of interest (ROIs). 
           This project explores a solution to overcome these limitations by utilizing a Super-Resolution (SR) technique to improve the detection of small objects, specifically focusing on weapon detection.</p>
@@ -55,20 +72,31 @@
         target="_blank" >Repository</a>
       </div>
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold mb-2">Progetto 2</h4>
-        <p class="text-gray-600 mb-4">Descrizione breve del progetto.</p>
-        <a href="#" class="text-blue-500 hover:underline">Guarda</a>
+        <h4 class="text-xl font-semibold text-center mb-2">Hardware-In-The-Loop approach for fault simulation and validation of diagnostic modules in Unmanned Aerial Vehicles</h4>
+        <img src="img/HITL_2.png" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
+        <p class="text-gray-600 mb-4">This repository contains the code and models developed for fault diagnosis in UAVs 
+          (Unmanned Aerial Vehicles) using machine learning techniques. 
+          The project involves the implementation and analysis of diagnostic modules on both an on-board computer (simulation) 
+          and a real flight controller (Pixhawk).</p>
+        <a href="https://github.com/Lorenzo-Cardoni/multifault-diagnosis-pixhawk-6" 
+        class="text-blue-500 hover:underline"
+        target="_blank" >Repository</a>
       </div>
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold mb-2">Progetto 3</h4>
-        <p class="text-gray-600 mb-4">Descrizione breve del progetto.</p>
-        <a href="#" class="text-blue-500 hover:underline">Guarda</a>
+        <h4 class="text-xl font-semibold text-center mb-2">GeoPosBall</h4><br><br>
+        <img src="img/GeoPosBall.jpg" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
+        <p class="text-gray-600 mb-4">The GeoPosBall project is a geospatial data acquisition device designed for underwater use. 
+          It integrates advanced technologies, including the WTGAHRS2 module, M5Stamp S3 microcontroller, 
+          and SD card storage, providing a versatile solution for accurate location and orientation data.p>
+        <a href="https://github.com/Lorenzo-Cardoni/GeoPosBall" 
+        class="text-blue-500 hover:underline"
+        target="_blank" >Repository</a>
       </div>
     </div>
   </section>
 
   <!-- Contact -->
-  <section id="contact" class="container mx-auto py-20 px-6">
+  <!-- <section id="contact" class="container mx-auto py-20 px-6">
     <h3 class="text-3xl font-bold mb-6 text-center">Contattami</h3>
     <form class="max-w-xl mx-auto space-y-4">
       <input type="text" placeholder="Nome" class="w-full p-3 border rounded">
@@ -76,11 +104,11 @@
       <textarea placeholder="Messaggio" class="w-full p-3 border rounded h-32"></textarea>
       <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded shadow hover:bg-blue-700">Invia</button>
     </form>
-  </section>
+  </section> -->
 
   <!-- Footer -->
   <footer class="bg-gray-900 text-white py-6 text-center">
-    <p>&copy; 2025 Lorenzo Cardoni. Tutti i diritti riservati.</p>
+    <p>&copy; 2025 Lorenzo Cardoni. All rights reserved.</p>
   </footer>
 </body>
 </html>
