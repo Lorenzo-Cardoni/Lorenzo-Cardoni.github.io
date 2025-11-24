@@ -13,7 +13,7 @@
       <h1 class="text-xl font-bold">Lorenzo Cardoni</h1>
       <ul class="flex space-x-6">
         <li><a href="#about" class="hover:text-yellow-500">About</a></li>
-        <li><a href="#projects" class="hover:text-yellow-500">Projects</a></li>
+        <li><a href="#projects" class="hover:text-yellow-500">Academic Projects</a></li>
         <!-- <li><a href="#contact" class="hover:text-yellow-500">Contacts</a></li> -->
       </ul>
     </nav>
@@ -36,7 +36,7 @@
   
       <!-- Left column: Photo -->
       <img 
-        src="img/busto.JPG" 
+        src="img/profile.jpg" 
         alt="Lorenzo Cardoni" 
         class="w-48 h-48 object-cover rounded-full shadow-lg"
       >
@@ -54,40 +54,60 @@
       </p>
   
     </div>
-  </section>
-  
+  </section>  
 
   <!-- Projects -->
   <section id="projects" class="bg-gray-100 py-20 px-6">
     <h3 class="text-3xl font-bold mb-10 text-center">Academic Projects</h3>
     <div class="grid md:grid-cols-3 gap-8 container mx-auto">
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold text-center mb-2">Object Detection with Super-Resolution for Small Objects</h4><br>
+        <h4 class="text-xl font-semibold text-center mb-2">Object Detection with Super-Resolution for Small Objects</h4>
         <img src="img/sryolo.png" alt="Project image" class="w-60 h-60 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">In the field of object detection, accurately identifying small objects remains a significant challenge. 
           This difficulty arises from the limited and distorted data present in small regions of interest (ROIs). 
           This project explores a solution to overcome these limitations by utilizing a Super-Resolution (SR) technique to improve the detection of small objects, specifically focusing on weapon detection.</p>
-        <a href="https://github.com/Lorenzo-Cardoni/Super-resolution-yolo5v-CV-DL" 
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#3776AB; color:#ffffff;">Python</span>
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#EE4C2C; color:#ffffff;">YOLOv5</span>
+            <span class="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">Deep Learning</span>
+          </div>
+          <a href="https://github.com/Lorenzo-Cardoni/Super-resolution-yolo5v-CV-DL" 
         class="text-blue-500 hover:underline"
         target="_blank" >Repository</a>
       </div>
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Hardware-In-The-Loop approach for fault simulation and validation of diagnostic modules in Unmanned Aerial Vehicles</h4>
         <img src="img/HITL_2.png" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
-        <p class="text-gray-600 mb-4">This repository contains the code and models developed for fault diagnosis in UAVs 
-          (Unmanned Aerial Vehicles) using machine learning techniques. 
-          The project involves the implementation and analysis of diagnostic modules on both an on-board computer (simulation) 
-          and a real flight controller (Pixhawk).</p>
+        <p class="text-gray-600 mb-4">This project aimed to develop a MATLAB toolbox for fault injection applicable to various types of Unmanned Aerial Vehicles (UAVs). 
+          The toolbox was validated by designing and testing a fault-diagnosis algorithm using machine learning techniques.
+          The work included the implementation and evaluation of diagnostic modules both on an onboard computer (in simulation) 
+          and on a real flight controller (Pixhawk).</p>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#ff9900; color:#ffffff;">Matlab & Simulink</span>
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#409591; color:#ffffff;">Hardware In The Loop</span>
+            <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm">Machine Learning</span>
+          </div>
         <a href="https://github.com/Lorenzo-Cardoni/multifault-diagnosis-pixhawk-6" 
         class="text-blue-500 hover:underline"
         target="_blank" >Repository</a>
       </div>
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold text-center mb-2">GeoPosBall</h4><br><br>
+        <h4 class="text-xl font-semibold text-center mb-2">GeoPosBall</h4>
         <img src="img/GeoPosBall.jpg" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">The GeoPosBall project is a geospatial data acquisition device designed for underwater use. 
           It integrates advanced technologies, including the WTGAHRS2 module, M5Stamp S3 microcontroller, 
-          and SD card storage, providing a versatile solution for accurate location and orientation data.p>
+          and SD card storage, providing a versatile solution for accurate location and orientation data.</p>
+        <!-- Tech stack badges -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#3776AB; color:#ffffff;">Python</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+          style="background-color:#ccdcee; color:#4c4c4c;">C++</span>
+        </div>
         <a href="https://github.com/Lorenzo-Cardoni/GeoPosBall" 
         class="text-blue-500 hover:underline"
         target="_blank" >Repository</a>
