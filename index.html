@@ -238,6 +238,19 @@
     <p>&copy; 2025 Lorenzo Cardoni. All rights reserved.</p>
   </footer>
   
-  
+  <script>
+    // 1. Get references to the button and the menu
+    const button = document.getElementById('mobile-menu-button');
+    const menu = document.getElementById('mobile-menu');
+
+    // 2. Add an event listener to the button
+    button.addEventListener('click', () => {
+        // 3. Toggle the 'hidden' class on the menu
+        menu.classList.toggle('hidden');
+        
+        // Optional: Also toggle 'flex' if you want to explicitly ensure it displays vertically
+        // menu.classList.toggle('flex'); 
+    });
+</script>
 </body>
 </html>
