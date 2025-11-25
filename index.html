@@ -61,10 +61,13 @@
   <!-- Projects -->
   <section id="projects" class="bg-gray-100 py-20 px-6">
     <h3 class="text-3xl font-bold mb-10 text-center">Academic Projects</h3>
-    <div class="grid md:grid-cols-3 gap-8 container mx-auto">
+
+    <div class="grid md:grid-cols-2 gap-8 container mx-auto">
+
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-        <h4 class="text-xl font-semibold text-center mb-2">Object Detection with Super-Resolution for Small Objects</h4>
-        <img src="img/sryolo.png" alt="Project image" class="w-60 h-60 object-cover  mx-auto rounded-lg mb-4">
+        <h4 class="text-xl font-semibold text-center mb-2">Object Detection of 
+          small objects with Super-Resolution techniques for use on edge devices with a focus on arm detection</h4>
+        <img src="img/sryolo.png" alt="Project image" class="w-80 h-80 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">In the field of object detection, accurately identifying small objects remains a significant challenge. 
           This difficulty arises from the limited and distorted data present in small regions of interest (ROIs). 
           This project explores a solution to overcome these limitations by utilizing a Super-Resolution (SR) technique to improve the detection of small objects, specifically focusing on weapon detection.</p>
@@ -78,9 +81,10 @@
         class="text-blue-500 hover:underline"
         target="_blank" >Repository</a>
       </div>
+
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Hardware-In-The-Loop approach for fault simulation and validation of diagnostic modules in Unmanned Aerial Vehicles</h4>
-        <img src="img/HITL_2.png" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/drone.png" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">This project aimed to develop a MATLAB toolbox for fault injection applicable to various types of Unmanned Aerial Vehicles (UAVs). 
           The toolbox was validated by designing and testing a fault-diagnosis algorithm using machine learning techniques.
           The work included the implementation and evaluation of diagnostic modules both on an onboard computer (in simulation) 
@@ -88,6 +92,8 @@
           <div class="flex flex-wrap gap-2 mb-4">
             <span class="px-3 py-1 rounded-full text-sm" 
             style="background-color:#ff9900; color:#ffffff;">Matlab & Simulink</span>
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#bccfee; color:#2d3138;">C++</span>
             <span class="px-3 py-1 rounded-full text-sm" 
             style="background-color:#000000; color:#ffffff;">Pixhawk</span>
             <span class="px-3 py-1 rounded-full text-sm" 
@@ -97,16 +103,36 @@
         class="text-blue-500 hover:underline"
         target="_blank" >Repository</a>
       </div>
+
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">GeoPosBall</h4>
-        <img src="img/GeoPosBall.jpg" alt="Project image" class="w-90 h-90 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/GeoPosBall.jpg" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">The GeoPosBall project is a geospatial data acquisition device designed for underwater use. 
           It integrates advanced technologies, including the WTGAHRS2 module, M5Stamp S3 microcontroller, 
           and SD card storage, providing a versatile solution for accurate location and orientation data.</p>
-        <!-- Tech stack badges -->
         <div class="flex flex-wrap gap-2 mb-4">
           <span class="px-3 py-1 rounded-full text-sm" 
             style="background-color:#3776AB; color:#ffffff;">Python</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+          style="background-color:#00878F; color:#ffffff;">Arduino</span>
+        </div>  
+        <a href="https://github.com/Lorenzo-Cardoni/GeoPosBall" 
+        class="text-blue-500 hover:underline"
+        target="_blank" >Repository</a>
+      </div>
+
+      <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold text-center mb-2">Control and management of an autonomus e-Bike with a STM32
+        </h4>
+        <img src="img/e-Bike.jpg" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
+        <p class="text-gray-600 mb-4">Replacing the Renesas microcontroller mounted in the e-bike with a new STM32H745 board.
+          Implementing and testing the board with the sensors (IMU, GPS, and encoder) and actuators of the self-driving vehicle.
+        </p>        
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="px-3 py-1 rounded-full text-sm" 
+          style="background-color:#bccfee; color:#2d3138;">C++</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+          style="background-color:#03234B; color:#ffffff;">STM32</span>
           <span class="px-3 py-1 rounded-full text-sm" 
           style="background-color:#00878F; color:#ffffff;">Arduino</span>
         </div>
@@ -117,57 +143,94 @@
     </div>
   </section>
 
+
   <section id="experience" class="bg-gray-100 py-10 px-6">
     <h3 class="text-3xl font-bold mb-10 text-center">Experience</h3>
     <div class="grid md:grid-cols-2 gap-8 container mx-auto">
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Controller Engineer Intership</h4>
         <img src="img/logo_pieralisi.jpg" alt="Project image" class="w-100 h-20 object-cover  mx-auto rounded-lg mb-4">
-        <p class="text-gray-600 mb-4"> 
-          <ul class="list-disc pl-6 text-gray-600">
-            <li>Progettazione banco da lavoro per acquisizione dati.</li>
-            <li>Stato dell'arte per la stima della coppia di un motore a regime.</li> 
-          </br>
-        </p>
-      </div>
-        <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
-          <h4 class="text-xl font-semibold text-center mb-2">Junior Data Engineer</h4>
-          <img src="img/logo_lfo.jpg" alt="Project image" class="w-100 h-20 object-cover  mx-auto rounded-lg mb-4">
-          <p class="text-gray-600 mb-4">
-            <ul class="list-disc pl-6 text-gray-600">
-            <li>Designing robust ETL pipelines using Python and SQL, ensuring accurate and efficient data flow to
-              support business intelligence and reporting workflows.</li>
-            <li>Integrating an LLM with various business data sources to dynamically generate BI visualizations.</li> 
-          </br>
+        
+          <ul class="list-disc pl-6 text-gray-600 space-y-4">
+        
+            <li>
+              <strong>Design of the Test Bench:</strong><br>
+              Developed the mechanical and electrical layout of a motor test bench used to simulate various load conditions.
+              <br>
+              Integrated:
+              <ul class="list-disc pl-6 mt-2">
+                <li>30 kW induction motor (motor under test)</li>
+                <li>90 kW brake motor acting as controllable load</li>
+                <li>Transmission system (pulleys, belts, external shaft)</li>
+                <li>Torsion measurement system with torsiometer and encoder</li>
+                <li>Defined system architecture, power supply line, sensors, and safety considerations</li>
+              </ul>
+            </li>
+        
+            <li>
+              <strong>Study of Torque Estimation Methods:</strong><br>
+              In-depth analysis of different approaches for estimating the torque of a three-phase induction motor, including:
+              <ul class="list-disc pl-6 mt-2">
+                <li>Model-based estimation (equivalent circuit, torque-speed curve)</li>
+                <li>Parameter estimation tests (no-load, blocked-rotor, DC resistance, MATLAB toolbox, nonlinear least squares)</li>
+                <li>Nameplate-based estimation (using electrical quantities & rated efficiency)</li>
+                <li>Statistical methods such as linear regression using experimental data</li>
+              </ul>
+            </li>
+        
           </ul>
-          </p>
-            <div class="flex flex-wrap gap-2 mb-4">
-              <span class="px-3 py-1 rounded-full text-sm" 
-              style="background-color:#3776AB; color:#ffffff;">Python</span>
-              <span class="px-3 py-1 rounded-full text-sm" 
-              style="background-color:#9846fb; color:#ffffff;">SQL</span>
-              <span class="px-3 py-1 rounded-full text-sm" 
-              style="background-color:#ffb700; color:#ffffff;">PowerBI</span>
-              <span class="px-3 py-1 rounded-full text-sm" 
-              style="background-color:#669DF6; color:#ffffff;">Google BigQuery</span>
-            </div>
+          <br>
+          <div class="flex flex-wrap gap-2 mb-4">
+            <span class="px-3 py-1 rounded-full text-sm" 
+            style="background-color:#ff9900; color:#ffffff;">Matlab & Simulink</span>
+          </div>
+      </div>
+        
+
+
+      <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
+        <h4 class="text-xl font-semibold text-center mb-2">Junior Data Engineer</h4>
+        <div class="flex justify-center mb-4">
+          <img src="img/logo_lfo.jpg" 
+               alt="LFO Company Logo" 
+               class="w-40 h-20 object-contain rounded-lg">
         </div>
+        <ul class="list-disc pl-6 text-gray-700 space-y-2 mb-4">
+          <li>
+            Developed and maintained <strong>ETL pipelines</strong> for relational data sources, ensuring reliable and clean data flows across business applications.
+          </li>
+          <li>
+            Executed the migration of legacy on-premise Data Warehouse data to Google BigQuery.
+          </li>
+          <li>
+            Developed <strong>BI dashboards</strong> for access-management reports to support auditing and security compliance across enterprise applications.
+          </li>
+          <li>
+            Customized and integrated an enterprise <strong>Large Language Model</strong>, enabling advanced data interrogation and automated business insights.
+          </li>
+        </ul>
+        <div class="flex flex-wrap gap-2">
+          <span class="px-3 py-1 rounded-full text-sm" 
+                style="background-color:#3776AB; color:#ffffff;">Python</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+                style="background-color:#9846fb; color:#ffffff;">SQL</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+                style="background-color:#ffb700; color:#ffffff;">Power BI</span>
+          <span class="px-3 py-1 rounded-full text-sm" 
+                style="background-color:#669DF6; color:#ffffff;">Google BigQuery</span>
+        </div>
+      
+      </div>
+      
+      </div>
   </section>
 
-  <!-- Contact -->
-  <!-- <section id="contact" class="container mx-auto py-20 px-6">
-    <h3 class="text-3xl font-bold mb-6 text-center">Contattami</h3>
-    <form class="max-w-xl mx-auto space-y-4">
-      <input type="text" placeholder="Nome" class="w-full p-3 border rounded">
-      <input type="email" placeholder="Email" class="w-full p-3 border rounded">
-      <textarea placeholder="Messaggio" class="w-full p-3 border rounded h-32"></textarea>
-      <button type="submit" class="bg-blue-600 text-white px-6 py-3 rounded shadow hover:bg-blue-700">Invia</button>
-    </form>
-  </section> -->
 
   <!-- Footer -->
-  <footer class="bg-gray-900 text-white py-6 text-center">
+  <footer class="bg-gradient-to-r from-blue-500 to-green-600 text-white py-6 text-center">
     <p>&copy; 2025 Lorenzo Cardoni. All rights reserved.</p>
   </footer>
+  
+  
 </body>
 </html>
