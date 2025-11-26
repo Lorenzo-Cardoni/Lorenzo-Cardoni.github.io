@@ -113,7 +113,7 @@
 
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">GeoPosBall</h4>
-        <img src="img/GeoPosBall.jpg" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/GeoPosBall.jpg" alt="Project image" class="w-adapt h-adapt object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">The GeoPosBall project is a geospatial data acquisition device designed for underwater use. 
           It integrates advanced technologies, including the WTGAHRS2 module, M5Stamp S3 microcontroller, 
           and SD card storage, providing a versatile solution for accurate location and orientation data.</p>
@@ -243,12 +243,10 @@
     const mobileMenu = document.getElementById('mobile-menu');
     const menuLinks = mobileMenu.querySelectorAll('a');
   
-    // Toggle menu on button click
     mobileMenuButton.addEventListener('click', () => {
       mobileMenu.classList.toggle('hidden');
     });
   
-    // Close menu when a link is clicked
     menuLinks.forEach(link => {
       link.addEventListener('click', () => {
         mobileMenu.classList.add('hidden');
