@@ -74,7 +74,7 @@
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Object Detection of 
           small objects with Super-Resolution techniques for use on edge devices with a focus on arm detection</h4>
-        <img src="img/sryolo.png" alt="Project image" class="w-80 h-80 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/sryolo.png" alt="Project image" class="w-adapt h-adapt object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">In the field of object detection, accurately identifying small objects remains a significant challenge. 
           This difficulty arises from the limited and distorted data present in small regions of interest (ROIs). 
           This project explores a solution to overcome these limitations by utilizing a Super-Resolution (SR) technique to improve the detection of small objects, specifically focusing on weapon detection.</p>
@@ -91,7 +91,7 @@
 
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Hardware-In-The-Loop approach for fault simulation and validation of diagnostic modules in Unmanned Aerial Vehicles</h4>
-        <img src="img/drone.png" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/drone.png" alt="Project image" class="w-adapt h-adapt object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">This project aimed to develop a MATLAB toolbox for fault injection applicable to various types of Unmanned Aerial Vehicles (UAVs). 
           The toolbox was validated by designing and testing a fault-diagnosis algorithm using machine learning techniques.
           The work included the implementation and evaluation of diagnostic modules both on an onboard computer (in simulation) 
@@ -131,7 +131,7 @@
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Control and management of an autonomus e-Bike with a STM32
         </h4>
-        <img src="img/e-Bike.jpg" alt="Project image" class="w-full h-80 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/e-Bike.jpg" alt="Project image" class="w-adapt h-adapt object-cover  mx-auto rounded-lg mb-4">
         <p class="text-gray-600 mb-4">Replacing the Renesas microcontroller mounted in the e-bike with a new STM32H745 board.
           Implementing and testing the board with the sensors (IMU, GPS, and encoder) and actuators of the self-driving vehicle.
         </p>        
@@ -156,7 +156,7 @@
     <div class="grid md:grid-cols-2 gap-8 container mx-auto">
       <div class="bg-white rounded-xl shadow p-6 hover:shadow-lg transition">
         <h4 class="text-xl font-semibold text-center mb-2">Controller Engineer Intership</h4>
-        <img src="img/logo_pieralisi.jpg" alt="Project image" class="w-100 h-20 object-cover  mx-auto rounded-lg mb-4">
+        <img src="img/logo_pieralisi.jpg" alt="Project image" class="w-adapt h-adapt object-cover  mx-auto rounded-lg mb-4">
         
           <ul class="list-disc pl-6 text-gray-600 space-y-4">
         
@@ -239,18 +239,22 @@
   </footer>
   
   <script>
-    // 1. Get references to the button and the menu
-    const button = document.getElementById('mobile-menu-button');
-    const menu = document.getElementById('mobile-menu');
-
-    // 2. Add an event listener to the button
-    button.addEventListener('click', () => {
-        // 3. Toggle the 'hidden' class on the menu
-        menu.classList.toggle('hidden');
-        
-        // Optional: Also toggle 'flex' if you want to explicitly ensure it displays vertically
-        // menu.classList.toggle('flex'); 
+    const mobileMenuButton = document.getElementById('mobile-menu-button');
+    const mobileMenu = document.getElementById('mobile-menu');
+    const menuLinks = mobileMenu.querySelectorAll('a');
+  
+    // Toggle menu on button click
+    mobileMenuButton.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
     });
-</script>
+  
+    // Close menu when a link is clicked
+    menuLinks.forEach(link => {
+      link.addEventListener('click', () => {
+        mobileMenu.classList.add('hidden');
+      });
+    });
+  </script>
+  
 </body>
 </html>
