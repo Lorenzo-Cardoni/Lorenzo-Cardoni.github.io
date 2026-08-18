@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ] # Sostituisci con 'master' se il tuo ramo si chiama master
+    branches: [ main ] # Sostituisci con 'master' se il tuo ramo principale si chiama master
   workflow_dispatch:
 
 permissions:
@@ -23,6 +23,8 @@ jobs:
 
       - name: Install, build, and upload
         uses: withastro/action@v3
+        with:
+          node-version: 22
 
   deploy:
     environment:
