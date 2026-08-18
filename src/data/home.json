@@ -1,17 +1,17 @@
 {
-  "name": "John Doe",
-  "photoUrl": "favicon.svg",
+  "name": "Lorenzo Cardoni",
+  "photoUrl": "profile.jpg",
   "location": "City, Country",
-  "availability": "Available for hire",
+  "availability": "Not available for hire",
   "description": "A brief, compelling introduction about who you are and what you do. Mention your core philosophy, your passion for building digital products, and your drive for creating efficient, high-impact solutions.",
-  "descriptionHtml": "A brief, compelling introduction about who you are and what you do. Mention your core <span class='text-accent font-bold'>philosophy</span>, your passion for building digital products, and your drive for creating <span class='text-accent font-bold'>efficient</span>, <span class='text-accent font-bold'>high-impact</span> solutions.",
-  "webpageTitle": "John Doe | Lead Software Engineer",
+  "descriptionHtml": "I graduated at Università Politecnica delle Marche (UNIVPM):<br><br>Bachelor's Degree in Computer and Automation Engineering<br>Master's Degree in Computer and Automation Engineering<br><br>My academic journey focused on Automation and Artificial Intelligence, with particular interest in Machine Learning, Deep Learning and Data Science. I have also studied hardware, such as microcontrollers, sensors, and motors.",
+  "webpageTitle": "Lorenzo Cardoni | Lead Software Engineer",
   "resumeUrl": "https://example-files.online-convert.com/document/pdf/example.pdf",
 
   "_seo_comment": "SEO fields — update these along with your personal info for best search engine visibility.",
   "jobTitle": "Lead Software Engineer",
-  "keywords": "John Doe, software engineer, Flutter, FastAPI, mobile development, portfolio",
-  "siteUrl": "https://https://lorenzo-cardoni.github.io/",
+  "keywords": "Lorenzo Cardoni, software engineer, Flutter, FastAPI, mobile development, portfolio",
+  "siteUrl": "https://lorenzo-cardoni.github.io/",
   "lang": "en",
   "twitterHandle": "",
   "ogImageUrl": "/placeholder.jpeg",
@@ -20,14 +20,14 @@
   "socials": [
     {
       "name": "GitHub",
-      "url": "https://github.com/[YOUR_USER_NAME]",
+      "url": "https://github.com/Lorenzo-Cardoni",
       "icon": "mdi:github",
       "label": "View Profile",
       "showInContact": true
     },
     {
       "name": "LinkedIn",
-      "url": "https://linkedin.com/in/[YOUR_USER_NAME]",
+      "url": "https://it.linkedin.com/in/lorenzocardoni",
       "icon": "mdi:linkedin",
       "label": "Connect",
       "showInContact": true
@@ -48,14 +48,14 @@
     },
     {
       "name": "Email",
-      "url": "mailto:your-mail@example.com",
+      "url": "mailto:cardonilorenzo31@gmail.com",
       "icon": "mdi:email",
       "label": "Send Email",
       "showInContact": true
     },
     {
       "name": "WhatsApp",
-      "url": "https://wa.me/[YOUR_WHATSAPP_NUMBER]",
+      "url": "#",
       "icon": "mdi:whatsapp",
       "label": "Send Message",
       "showInContact": true
