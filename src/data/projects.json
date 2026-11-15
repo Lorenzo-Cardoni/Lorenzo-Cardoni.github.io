@@ -1,20 +1,164 @@
-[
-  {
-    "title": "Awesome Website",
-    "description": "A high-performance, SEO-optimized web application built with modern frameworks to showcase technical expertise.",
-    "images": ["astro-01.webp", "astro-02.jpeg"],
-    "tech": ["Astro", "Tailwind"],
-    "platforms": ["web"],
-    "link": "https://astro.build/themes/details/career-portfolio-data-driven-astro-ssg/",
-    "category": "Published Website"
-  },
-  {
-    "title": "Demo Mobile App",
-    "description": "A high-performance mobile application built with modern frameworks to showcase technical expertise.",
-    "images": ["astro-02.jpeg", "#"],
-    "tech": ["Flutter", "Dart", "REST API"],
-    "platforms": ["apple-ios", "android"],
-    "link": "https://github.com/nbakh16/career-portfolio-template",
-    "category": "Hobby"
-  }
-]
+{
+  "featured": [
+    {
+      "title": "Fault diagnosis for UAVs with hardware-in-the-loop",
+      "kind": "MSc thesis",
+      "year": "2025",
+      "image": "drone.png",
+      "imageAlt": "QGroundControl mission plan next to a Simulink 3D view of a quadcopter flying over a city",
+      "fit": "cover",
+      "description": "A MATLAB toolbox that injects sensor and actuator faults into a simulated drone, and machine learning models that detect them. The diagnostic modules were validated in simulation and then on a real Pixhawk flight controller running PX4, with the vehicle dynamics simulated in Simulink.",
+      "points": [
+        "Fault injection toolbox reusable across UAV types",
+        "Feature extraction and classifier training in MATLAB",
+        "Deployed and benchmarked on the flight controller in HITL"
+      ],
+      "tech": [
+        "MATLAB",
+        "Simulink",
+        "PX4",
+        "Pixhawk",
+        "C++",
+        "QGroundControl"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/multifault-diagnosis-pixhawk-6",
+      "linkLabel": "Repository"
+    },
+    {
+      "title": "Super-resolution for small-object detection on edge devices",
+      "kind": "University project",
+      "year": "2023",
+      "image": "sryolo.png",
+      "imageAlt": "Surveillance camera frames with detected handguns and knives marked by red boxes",
+      "fit": "contain",
+      "description": "Small objects carry too few pixels for a detector to work with. This project adds a GAN-based super-resolution stage to YOLOv5 that doubles the size of backbone feature maps, targeting handgun and knife detection in surveillance footage on Jetson-class hardware.",
+      "points": [
+        "DCGAN integrated between YOLOv5 backbone and neck",
+        "Benchmark across four input resolutions",
+        "mAP50 of 0.739 at 416×416 with 1.5 ms inference"
+      ],
+      "tech": [
+        "Python",
+        "PyTorch",
+        "YOLOv5",
+        "GAN"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/Super-resolution-yolo5v-CV-DL",
+      "linkLabel": "Repository"
+    },
+    {
+      "title": "GeoPosBall: underwater geospatial data logger",
+      "kind": "Client prototype",
+      "year": "2024",
+      "image": "GeoPosBall.jpg",
+      "imageAlt": "The GeoPosBall buoys in open water next to a diver and a support boat during a field test",
+      "fit": "cover",
+      "description": "A waterproof device that records position and orientation of objects underwater. It combines a GPS and inertial module with an M5Stamp S3 microcontroller, logs to SD card and streams over Wi-Fi. Tested in pools and open water, and brought to TRL 5 for the client.",
+      "points": [
+        "IP68 enclosure with GPS and IMU fusion",
+        "On-board logging plus wireless monitoring",
+        "Validated in real-world sea trials"
+      ],
+      "tech": [
+        "Arduino",
+        "C++",
+        "Python",
+        "ESP32-S3"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/GeoPosBall",
+      "linkLabel": "Repository"
+    },
+    {
+      "title": "Volleyball player and ball detection",
+      "kind": "Personal project",
+      "year": "2025",
+      "image": "volleyball.jpg",
+      "imageAlt": "A volleyball match frame with players and ball marked by detection boxes",
+      "fit": "cover",
+      "description": "A YOLOv11 detector trained to find players and the ball in volleyball footage. It is the first step of a larger idea: track each player and map the action onto a top-down view of the court.",
+      "points": [
+        "YOLOv11 fine-tuned on a public Roboflow dataset",
+        "Next: player tracking and court mapping"
+      ],
+      "tech": [
+        "Python",
+        "YOLOv11",
+        "Ultralytics",
+        "Roboflow"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/volleyball-player-detection-with-deep-learning-model",
+      "linkLabel": "Repository"
+    },
+    {
+      "title": "Control of an autonomous e-bike on STM32",
+      "kind": "University project",
+      "year": "",
+      "image": "e-Bike.jpg",
+      "imageAlt": "A small blue bicycle on a lab bench fitted with control boards, motor drivers and a steering actuator",
+      "fit": "cover",
+      "description": "Replaced the original Renesas microcontroller of a self-driving e-bike with an STM32H745 board, then re-integrated and tested the IMU, GPS and encoder along with the vehicle's actuators.",
+      "points": [
+        "Firmware port to a dual-core STM32H7",
+        "Sensor and actuator bring-up on the vehicle"
+      ],
+      "tech": [
+        "C++",
+        "STM32",
+        "Embedded"
+      ],
+      "link": "",
+      "linkLabel": ""
+    }
+  ],
+  "more": [
+    {
+      "title": "CNN inference on an STM32 board",
+      "description": "Trained an image-recognition CNN in TensorFlow and deployed it on an STM32F429I-DISCO for real-time inference, validating accuracy on the device.",
+      "tech": [
+        "TensorFlow",
+        "STM32",
+        "C"
+      ],
+      "link": ""
+    },
+    {
+      "title": "Heart attack risk: classification and clustering",
+      "description": "Eight classifiers tuned with grid search, plus K-means, DBSCAN and hierarchical clustering with and without PCA, on a clinical dataset.",
+      "tech": [
+        "scikit-learn",
+        "XGBoost",
+        "Pandas"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/Classification-Clustering-of-Heart-Attack"
+    },
+    {
+      "title": "Temperature forecasting with SARIMAX",
+      "description": "Seasonal time-series models on five years of hourly temperature data for US cities, with adjustable forecast horizons and confidence intervals.",
+      "tech": [
+        "statsmodels",
+        "pmdarima",
+        "Pandas"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/Forecasting-Weather-Data-2012-2017"
+    },
+    {
+      "title": "Video game recommendation chatbot",
+      "description": "A conversational assistant built with the Rasa framework that recommends video games, packaged with Docker Compose.",
+      "tech": [
+        "Rasa",
+        "Python",
+        "Docker"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/Chatbot-of-Video-Games-2023"
+    },
+    {
+      "title": "Game of Thrones network analysis",
+      "description": "Social network analysis of character interactions: centrality measures, PageRank and Louvain community detection with interactive graphs.",
+      "tech": [
+        "NetworkX",
+        "Python"
+      ],
+      "link": "https://github.com/Lorenzo-Cardoni/Game-of-Thrones-Network-Analysis"
+    }
+  ]
+}

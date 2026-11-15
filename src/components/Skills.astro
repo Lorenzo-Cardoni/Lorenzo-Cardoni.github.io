@@ -1,0 +1,90 @@
+---
+import SectionHeading from './SectionHeading.astro';
+import skills from '../data/skills.json';
+import background from '../data/background.json';
+---
+
+<section class="section" id="skills">
+  <div class="container">
+    <SectionHeading index="05" label="Skills" title="Tools I work with." />
+
+    <dl class="groups">
+      {
+        skills.map((group) => (
+          <div class="group" data-reveal>
+            <dt>{group.title}</dt>
+            <dd>
+              <ul class="tags">
+                {group.skills.map((s) => (
+                  <li class="tag">{s}</li>
+                ))}
+              </ul>
+            </dd>
+          </div>
+        ))
+      }
+      <div class="group" data-reveal>
+        <dt>Languages</dt>
+        <dd>
+          <ul class="tags">
+            {
+              background.languages.map((l) => (
+                <li class="tag">
+                  {l.name} <span class="level">{l.level}</span>
+                </li>
+              ))
+            }
+          </ul>
+        </dd>
+      </div>
+    </dl>
+  </div>
+</section>
+
+<style>
+  .groups {
+    margin: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .group {
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    gap: 12px clamp(24px, 5vw, 64px);
+    align-items: baseline;
+    padding: 22px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  dt {
+    font-family: var(--font-display);
+    font-size: 1.06rem;
+    font-weight: 600;
+  }
+
+  dd {
+    margin: 0;
+  }
+
+  .tags {
+    gap: 8px;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+    padding: 8px 10px;
+    color: var(--text);
+    background: var(--bg-raised);
+  }
+
+  .level {
+    margin-left: 4px;
+    color: var(--accent);
+  }
+
+  @media (max-width: 719px) {
+    .group {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

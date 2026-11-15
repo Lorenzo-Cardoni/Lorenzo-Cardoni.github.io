@@ -1,0 +1,54 @@
+[
+  {
+    "company": "Inim Electronics",
+    "role": "Junior AI & Data Specialist",
+    "period": "Apr 2026 – Present",
+    "type": "Full-time",
+    "summary": "R&D for computer vision products and automation of business processes.",
+    "highlights": [
+      "Research and development on computer vision features for the company's products.",
+      "Built AI-driven workflows for order management and technical compliance checks.",
+      "Implemented an enterprise LLM chatbot."
+    ],
+    "skills": ["Python", "LLM", "Multimodal LLM", "Computer Vision", "Docker"]
+  },
+  {
+    "company": "Lega del Filo d'Oro",
+    "role": "Junior Data Engineer",
+    "period": "Apr 2025 – Oct 2025",
+    "type": "Full-time",
+    "summary": "Data pipelines, reporting and an LLM layer over business data.",
+    "highlights": [
+      "Designed and maintained ETL pipelines in Python and SQL feeding business intelligence and reporting.",
+      "Migrated a legacy on-premise data warehouse to Google BigQuery.",
+      "Built BI dashboards for access-management reports supporting auditing and security compliance.",
+      "Integrated an enterprise LLM with business data sources to generate BI visualizations on request."
+    ],
+    "skills": ["Python", "SQL", "Google BigQuery", "Power BI", "LLM"]
+  },
+  {
+    "company": "Pieralisi",
+    "role": "Control Engineer Intern",
+    "period": "Sep 2024 – Nov 2024",
+    "type": "Internship",
+    "summary": "Motor test bench design and torque estimation for induction motors.",
+    "highlights": [
+      "Designed the electrical layout of a test bench pairing a 30 kW induction motor under test with a 90 kW brake motor as controllable load.",
+      "Defined system architecture, power supply line, torque and speed sensing, and safety requirements.",
+      "Compared torque estimation methods for three-phase induction motors: model-based, parameter identification, nameplate-based and regression on experimental data."
+    ],
+    "skills": ["MATLAB", "Simulink", "Induction motors"]
+  },
+  {
+    "company": "Università Politecnica delle Marche",
+    "role": "Laboratory Technician",
+    "period": "Jan 2024 – Mar 2024",
+    "type": "Contract",
+    "summary": "Embedded prototype for locating objects underwater, delivered to a client.",
+    "highlights": [
+      "Designed and built an embedded prototype that detects and estimates the position of underwater objects, validated in real-world tests.",
+      "Coordinated the project with the client using Agile practices, reaching Technology Readiness Level 5."
+    ],
+    "skills": ["Embedded", "Arduino", "Python", "Agile"]
+  }
+]

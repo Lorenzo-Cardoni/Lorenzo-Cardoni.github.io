@@ -1,123 +1,59 @@
-# CareerPortfolio: Data-Driven Astro SSG
-Live Demo: [careerportofio.netlify.app](https://careerportofio.netlify.app)
+# lorenzo-cardoni.github.io
 
-[![Astro](https://img.shields.io/badge/Astro-FF5D01?logo=astro&logoColor=white)](https://astro.build/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Contributions Welcome](https://img.shields.io/badge/🤝_Contributions-Welcome-blue)](CONTRIBUTING.md)
+Personal portfolio of Lorenzo Cardoni, AI Engineer. Live at <https://lorenzo-cardoni.github.io/>.
 
-A high-performance, responsive portfolio built with **Astro**, **Tailwind CSS**, and **Native Browser Animations**. Designed to be 100% data-driven and easy to customize as a reusable template.
+Static site built with [Astro](https://astro.build/). No UI framework and no CSS framework: plain Astro components with scoped CSS.
 
-## 🌟 Highlights
-- **Zero-JS by Default:** Leveraging Astro's islands architecture.
-- **JSON-First:** Update your information in `src/data/` without touching any code.
-- **SEO & AI Ready:** Auto-generated `sitemap.xml`, `robots.txt`, and `/llms.txt` endpoint for AI/LLM crawlers, full Open Graph/Twitter Card support and JSON-LD structured data.
-- **Built-in Themes**: Switch between multiple professional color palettes and light/dark modes from a single config file.
-- **Fully Responsive:** Optimized for mobile, tablet, and desktop.
-- **Performance:** Optimized for perfect Lighthouse scores.
+## Editing content
 
-## 🛠️ Tech Stack
-- **Frontend:** [Astro](https://astro.build/) (Static Site Generation)
-- **Styling:** [Tailwind CSS](https://tailwindcss.com/)
-- **Icons:** [Iconify](https://iconify.design/) via `astro-icon`
-- **Deployment:** [Netlify](https://www.netlify.com)
-- **Backend:** [FastAPI](https://fastapi.tiangolo.com/) *(Works without backend — open source release coming soon)*
+All text lives in `src/data/`. Changing these files is enough for most updates.
 
-## 🚀 Getting Started
-Follow these instructions to get a local copy up and running.
+| File | Content |
+| --- | --- |
+| `profile.json` | Name, title, hero text, about, focus areas, social links, SEO fields |
+| `experience.json` | Work experience, most recent first |
+| `projects.json` | `featured` projects (with image) and `more` projects (compact cards) |
+| `background.json` | Publications, education, competitions, spoken languages |
+| `skills.json` | Skill groups |
 
-### Prerequisites
-Make sure you have **Astro v6** and **Node.js** (v22.12.0 or higher) installed on your machine.
+Notes:
 
-### Installation
-1. Click **Use this template** on this repository.
-2. Choose **Create a new repository**.
-3. Clone your new repository: `git clone <your-repo-url>`
-4. Navigate to your repo: `cd <your-repo-name>`
-5. Install dependencies: `npm install`
-6. Start development server: `npm run dev`
-7. Update your content in `/src/data/`
-8. Build and deploy on your preferred platform
+- Project and profile images go in `src/assets/` and are referenced by file name. Astro resizes and converts them at build time.
+- A featured project uses `"fit": "cover"` to fill its frame, or `"fit": "contain"` to show the whole image on a white background.
+- Leave a project's `link` empty to hide its repository link.
+- The CV is `public/Cardoni_Lorenzo_Resume.pdf`. Replace the file, keeping the name, to update it.
+- `public/og.png` (1200×630) is the preview image shown when the site is shared.
+- `src/assets/unused/` holds images that are not shown on the site and are not shipped.
 
+## Development
 
-## 🛠️ How to Customize
-To make this portfolio yours, simply edit the JSON files in `src/data/`.
+Requires Node.js 22.12 or newer.
 
-### 🎨 Switching Themes
-This template comes with multiple built-in color palettes. To change the theme of your portfolio, open `src/config.ts` and update the `baseTheme` variable to one of the available options:
-
-```typescript
-export const SITE_CONFIG = {
-  // Options: 'default', 'strategic', 'innovator', 'executive'
-  baseTheme: 'default', 
-};
-```
-*(The template will automatically handle the dark/light mode toggles for whichever base theme you choose!)*
-
-### 📁 Directory Structure
-```
-├── public/              # Global static assets (placeholder.jpg, favicon)
-├── src/
-│   ├── assets/          # Project & Profile images (Supports automatic Astro optimization)
-│   ├── components/      # Reusable Astro components
-│   ├── data/            # JSON files for project data
-│   ├── layouts/         # Layout templates with Meta tags
-│   ├── pages/           # Site routes (index.astro)
-│   └── styles/          # Global CSS styles
-│   └── config.ts        # Global site configuration
-├── astro.config.mjs     # Astro configuration
-└── tsconfig.json        # TypeScript configuration
+```bash
+npm install
+npm run dev      # local server with hot reload
+npm run check    # type-check
+npm run build    # production build in dist/
+npm run preview  # serve the production build
 ```
 
-### 🔍 SEO & AI Optimization
-All SEO and AI metadata is driven from `src/data/home.json`. Update the fields below to improve search engine, social media and AI crawler visibility:
+## Deployment
 
-| Field | Description |
-| :------------ | :----------------------------------------------------------- |
-| `siteUrl` | Your deployed domain (e.g. `https://yourname.dev`). Required for canonical URLs, sitemap and absolute OG image links. |
-| `webpageTitle` | Page tab title and Open Graph title tag. |
-| `description` | Primary intro summary used for meta description, Open Graph, Twitter preview cards and `/llms.txt`. |
-| `lang` | Page language code (e.g. `en`, `fr`, `de`). Sets the `<html lang>` attribute. |
-| `jobTitle` | Your role — included in JSON-LD structured data shown to search engines and `/llms.txt`. |
-| `keywords` | Comma-separated keywords for the `<meta name="keywords">` tag. |
-| `twitterHandle` | Your Twitter/X username (with or without `@`). Enables Twitter Card attribution. |
-| `ogImageUrl` | Path to your Open Graph preview image. Use a **1200×630 px** image for best results across all platforms. |
+Every push to `main` builds and publishes the site to GitHub Pages through `.github/workflows/deploy.yml`.
 
-> **Automatic Features:**
-> - `sitemap-index.xml` & `robots.txt`: Auto-generated at build time.
-> - `/llms.txt`: Dynamically generated Markdown portfolio route for AI agents and LLM web crawlers (powered by [`src/pages/llms.txt.ts`](file:///Users/nabil/_projects/astro-trial/career-portfolio-template/src/pages/llms.txt.ts)).
+## Structure
 
+```
+src/
+  components/   One component per page section, plus Icon and SectionHeading
+  data/         Site content (JSON)
+  layouts/      HTML shell, SEO tags, theme bootstrap
+  pages/        index, robots.txt, llms.txt
+  styles/       Design tokens and shared styles
+```
 
+Colors, fonts and spacing are defined as CSS variables at the top of `src/styles/global.css`, once for the dark theme and once for the light theme.
 
-### 📚 Useful commands and links for reference:
+## Credits
 
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-Tailwind CSS: `npx astro add tailwind`
-
-Inter font: `npm install @fontsource-variable/inter` 
-
-Space Grotesk font: `npm install @fontsource-variable/space-grotesk`
-
-Astro-icon: `npx astro add astro-icon`
-
-Material Desing Icons: `npm install @iconify-json/mdi`
-
-https://docs.astro.build/en/guides/styling/#add-tailwind-4
-
-https://www.astroicon.dev
-
-https://icon-sets.iconify.design/mdi/?category=Material
-
-## 🤝 Contributing
-Contributions are welcome!  
-Please read the [Contributing Guide](CONTRIBUTING.md) before opening a PR.
-
-## 📝 License
-This project is licensed under the [MIT License](LICENSE)
+The project started from the MIT-licensed [career-portfolio-template](https://github.com/nbakh16/career-portfolio-template) by Nabil Akhunjee; see `LICENSE`.

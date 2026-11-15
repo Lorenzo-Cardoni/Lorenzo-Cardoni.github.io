@@ -1,0 +1,18 @@
+[
+  {
+    "title": "AI and computer vision",
+    "skills": ["PyTorch", "TensorFlow", "YOLO / Ultralytics", "OpenCV", "scikit-learn", "LLM integration", "Multimodal LLM", "Roboflow"]
+  },
+  {
+    "title": "Data",
+    "skills": ["Python", "SQL", "Pandas", "NumPy", "SciPy", "Matplotlib", "Google BigQuery", "Power BI", "Qlik"]
+  },
+  {
+    "title": "Embedded and control",
+    "skills": ["C / C++", "MATLAB", "Simulink", "STM32", "Arduino", "Raspberry Pi", "PX4 / Pixhawk"]
+  },
+  {
+    "title": "Tooling",
+    "skills": ["Git", "Docker", "LaTeX"]
+  }
+]

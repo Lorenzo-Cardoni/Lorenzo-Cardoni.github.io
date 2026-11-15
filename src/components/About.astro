@@ -1,0 +1,84 @@
+---
+import SectionHeading from './SectionHeading.astro';
+import profile from '../data/profile.json';
+---
+
+<section class="section" id="about">
+  <div class="container">
+    <SectionHeading index="01" label="About" title="An engineer first, then an AI engineer." />
+
+    <div class="layout">
+      <div class="prose" data-reveal>
+        {profile.about.map((p) => <p>{p}</p>)}
+      </div>
+
+      <ul class="focus">
+        {
+          profile.focus.map((item, i) => (
+            <li data-reveal>
+              <span class="num mono">{String(i + 1).padStart(2, '0')}</span>
+              <div>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(32px, 6vw, 80px);
+    align-items: start;
+  }
+
+  .prose {
+    display: grid;
+    gap: 1.1em;
+    font-size: 1.08rem;
+    color: var(--muted);
+  }
+
+  .prose p:first-child {
+    color: var(--text);
+  }
+
+  .focus li {
+    display: grid;
+    grid-template-columns: 36px minmax(0, 1fr);
+    gap: 8px;
+    padding: 20px 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .focus li:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .num {
+    color: var(--accent);
+    padding-top: 4px;
+  }
+
+  h3 {
+    font-size: 1.12rem;
+  }
+
+  .focus p {
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 0.96rem;
+  }
+
+  @media (max-width: 799px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

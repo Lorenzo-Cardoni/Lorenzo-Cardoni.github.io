@@ -1,0 +1,61 @@
+{
+  "publications": [
+    {
+      "title": "Benchmark Analysis of YOLOv8 for Edge AI Video-Surveillance Applications",
+      "authors": [
+        "Daniele Berardini",
+        "Lucia Migliorelli",
+        "Lorenzo Cardoni",
+        "Christian Parente",
+        "Alessandro Rongoni",
+        "Daniele Sergiacomi",
+        "Adriano Mancini"
+      ],
+      "venue": "IEEE/ASME International Conference on Mechatronic and Embedded Systems and Applications (MESA)",
+      "date": "2024",
+      "doi": "10.1109/MESA61532.2024.10704889"
+    }
+  ],
+
+  "education": [
+    {
+      "degree": "MSc in Computer and Automation Engineering",
+      "school": "Università Politecnica delle Marche",
+      "period": "Oct 2022 – Feb 2025",
+      "grade": "110/110 cum laude",
+      "thesis": "Hardware-in-the-loop approach for fault simulation and validation of diagnostic modules in UAVs",
+      "advisor": "Prof. Alessandro Freddi"
+    },
+    {
+      "degree": "BSc in Computer and Automation Engineering",
+      "school": "Università Politecnica delle Marche",
+      "period": "Sep 2019 – Dec 2022",
+      "grade": "103/110",
+      "thesis": "Study and development of linear controllers for attitude control of mini-drones",
+      "advisor": "Prof. Gianluca Ippoliti"
+    }
+  ],
+
+  "challenges": [
+    {
+      "title": "Bosch Future Mobility Challenge",
+      "period": "Nov 2022 – Mar 2023",
+      "description": "Developed the perception stack for a 1:10 scale autonomous car, detecting signs, pedestrians and lanes with a YOLOv5 model."
+    },
+    {
+      "title": "UNIVPM Hackathon 2024",
+      "period": "Mar 2024",
+      "description": "Trained a deep learning model that recognizes waste from camera input, for a litter-collecting social robot concept."
+    },
+    {
+      "title": "UNIVPM Hackathon 2023",
+      "period": "Mar 2023",
+      "description": "Designed a website to help large tourist events manage crowd flow and safety."
+    }
+  ],
+
+  "languages": [
+    { "name": "Italian", "level": "Native" },
+    { "name": "English", "level": "B2" }
+  ]
+}

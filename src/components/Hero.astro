@@ -1,0 +1,341 @@
+---
+import { Image } from 'astro:assets';
+import Icon from './Icon.astro';
+import profile from '../data/profile.json';
+import { resolveAssetImage } from '../utils/images';
+
+const photo = await resolveAssetImage(profile.photo);
+---
+
+<section class="hero" id="top">
+  <div class="grid-bg" aria-hidden="true"></div>
+
+  <div class="container">
+    <div class="layout">
+      <div class="copy">
+        <p class="eyebrow">
+          {profile.jobTitle}
+          <span class="sep" aria-hidden="true">/</span>
+          <span class="place"><Icon name="pin" size={13} />{profile.location}</span>
+        </p>
+        <h1>{profile.name}</h1>
+        <p class="headline">{profile.headline}</p>
+        <p class="intro">{profile.intro}</p>
+
+        <div class="cta">
+          <a class="btn" href="#projects">
+            View projects
+            <Icon name="arrow-down" size={16} />
+          </a>
+          <a class="btn btn--ghost" href={`mailto:${profile.email}`}>
+            <Icon name="mail" size={16} />
+            Get in touch
+          </a>
+          <ul class="socials">
+            {
+              profile.socials.map((s) => (
+                <li>
+                  <a href={s.url} target="_blank" rel="noopener me" aria-label={s.name}>
+                    <Icon name={s.icon} size={20} />
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      {
+        photo && (
+          <figure class="portrait">
+            <Image
+              src={photo}
+              alt={`Portrait of ${profile.name}`}
+              widths={[360, 540, 720]}
+              sizes="(max-width: 899px) 70vw, 360px"
+              loading="eager"
+              fetchpriority="high"
+            />
+            <div class="detect" aria-hidden="true">
+              <span class="label">ai_engineer 0.99</span>
+              <i class="c tl" />
+              <i class="c tr" />
+              <i class="c bl" />
+              <i class="c br" />
+            </div>
+          </figure>
+        )
+      }
+    </div>
+
+    <dl class="status">
+      {
+        profile.status.map((item) => (
+          <div class="cell">
+            <dt>{item.label}</dt>
+            <dd>{item.value}</dd>
+          </div>
+        ))
+      }
+    </dl>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    padding-top: calc(var(--nav-h) + clamp(40px, 8vw, 88px));
+    padding-bottom: clamp(48px, 7vw, 80px);
+    overflow: hidden;
+  }
+
+  /* Faint measurement grid that fades out toward the edges */
+  .grid-bg {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 80% 70% at 60% 20%, #000 20%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse 80% 70% at 60% 20%, #000 20%, transparent 75%);
+    pointer-events: none;
+  }
+
+  .container {
+    position: relative;
+  }
+
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    gap: clamp(32px, 6vw, 80px);
+    align-items: center;
+  }
+
+  .eyebrow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 12px;
+  }
+
+  .sep {
+    color: var(--line-strong);
+  }
+
+  .place {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+  }
+
+  h1 {
+    margin-top: 20px;
+    font-size: clamp(2.7rem, 8.4vw, 5.25rem);
+    letter-spacing: -0.04em;
+    line-height: 0.98;
+  }
+
+  .headline {
+    margin-top: 24px;
+    max-width: 21em;
+    font-family: var(--font-display);
+    font-size: clamp(1.3rem, 2.6vw, 1.75rem);
+    line-height: 1.28;
+    letter-spacing: -0.01em;
+    color: var(--text);
+  }
+
+  .intro {
+    margin-top: 16px;
+    max-width: 34em;
+    color: var(--muted);
+    font-size: 1.04rem;
+  }
+
+  .cta {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .socials {
+    display: flex;
+    gap: 4px;
+    margin-left: 4px;
+  }
+
+  .socials a {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+
+  .socials a:hover {
+    color: var(--accent);
+  }
+
+  /* Portrait with a detection box, as a detector would draw it */
+  .portrait {
+    position: relative;
+    aspect-ratio: 4 / 5;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--line-strong);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+  }
+
+  .portrait img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: 50% 20%;
+  }
+
+  .detect {
+    position: absolute;
+    inset: 21% 15% 21% 23%;
+    animation: lock-on 0.9s var(--ease) 0.35s both;
+  }
+
+  .label {
+    position: absolute;
+    left: -2px;
+    bottom: 100%;
+    margin-bottom: 6px;
+    padding: 4px 7px;
+    background: #c3f25e;
+    color: #0b1205;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    border-radius: 3px;
+  }
+
+  .c {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 0 solid #c3f25e;
+  }
+
+  .tl {
+    top: 0;
+    left: 0;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .tr {
+    top: 0;
+    right: 0;
+    border-top-width: 2px;
+    border-right-width: 2px;
+  }
+
+  .bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+  }
+
+  @keyframes lock-on {
+    from {
+      opacity: 0;
+      transform: scale(1.18);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* Fact strip */
+  .status {
+    margin: clamp(40px, 7vw, 72px) 0 0;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--surface) 70%, transparent);
+  }
+
+  .cell {
+    padding: 18px 20px;
+    border-left: 1px solid var(--line);
+  }
+
+  .cell:first-child {
+    border-left: 0;
+  }
+
+  dt {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--faint);
+  }
+
+  dd {
+    margin: 8px 0 0;
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
+  @media (max-width: 899px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+
+    .portrait {
+      order: -1;
+      width: min(240px, 62vw);
+    }
+
+    .status {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .cell:nth-child(odd) {
+      border-left: 0;
+    }
+
+    .cell:nth-child(n + 3) {
+      border-top: 1px solid var(--line);
+    }
+  }
+
+  @media (max-width: 479px) {
+    .status {
+      grid-template-columns: 1fr;
+    }
+
+    .cell {
+      border-left: 0;
+    }
+
+    .cell:nth-child(n + 2) {
+      border-top: 1px solid var(--line);
+    }
+  }
+</style>

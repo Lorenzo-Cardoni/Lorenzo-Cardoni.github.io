@@ -1,16 +1,15 @@
-import homeData from '../data/home.json';
+import profile from '../data/profile.json';
 
 export async function GET() {
-  const siteUrl = (homeData.siteUrl || '').replace(/\/$/, '');
-
-  const sitemapLine = siteUrl ? `\nSitemap: ${siteUrl}/sitemap-index.xml\n` : '';
+  const siteUrl = profile.seo.siteUrl.replace(/\/$/, '');
 
   const body = `User-agent: *
-Allow: /${sitemapLine}`;
+Allow: /
+
+Sitemap: ${siteUrl}/sitemap-index.xml
+`;
 
   return new Response(body, {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-    },
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 }

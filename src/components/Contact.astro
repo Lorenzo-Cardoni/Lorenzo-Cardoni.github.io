@@ -1,0 +1,136 @@
+---
+import Icon from './Icon.astro';
+import profile from '../data/profile.json';
+---
+
+<section class="section contact" id="contact">
+  <div class="container">
+    <div class="panel" data-reveal>
+      <p class="eyebrow"><span class="idx">06</span>Contact</p>
+      <h2 class="lede">Email is the fastest way to reach me.</h2>
+
+      <a class="email" href={`mailto:${profile.email}`}>
+        <span>{profile.email}</span>
+        <Icon name="arrow-up-right" size={22} />
+      </a>
+
+      <ul class="channels">
+        {
+          profile.socials.map((s) => (
+            <li>
+              <a class="btn btn--ghost" href={s.url} target="_blank" rel="noopener me">
+                <Icon name={s.icon} size={17} />
+                {s.name}
+              </a>
+            </li>
+          ))
+        }
+        <li>
+          <a class="btn btn--ghost" href={profile.resumeUrl} target="_blank" rel="noopener">
+            <Icon name="download" size={17} />
+            Download CV
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container row">
+    <p>© {new Date().getFullYear()} {profile.name}</p>
+    <p class="mono">{profile.location}</p>
+    <a href="#top">Back to top</a>
+  </div>
+</footer>
+
+<style>
+  .panel {
+    position: relative;
+    padding: clamp(28px, 6vw, 72px);
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background:
+      radial-gradient(ellipse 70% 90% at 100% 0%, var(--accent-soft), transparent 60%),
+      var(--bg-raised);
+    overflow: hidden;
+  }
+
+  .idx {
+    color: var(--faint);
+    margin-right: 12px;
+  }
+
+  .lede {
+    margin-top: 16px;
+    max-width: 36em;
+    font-family: var(--font-sans);
+    font-weight: 400;
+    letter-spacing: 0;
+    color: var(--muted);
+    font-size: 1.06rem;
+  }
+
+  .email {
+    margin-top: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 100%;
+    font-family: var(--font-display);
+    font-size: clamp(1.15rem, 3.6vw, 2rem);
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    color: var(--accent);
+    border-bottom: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+    padding-bottom: 4px;
+    transition: border-color 0.2s;
+  }
+
+  .email span {
+    overflow-wrap: anywhere;
+  }
+
+  .email :global(svg) {
+    flex: none;
+    transition: transform 0.2s var(--ease);
+  }
+
+  .email:hover {
+    border-bottom-color: var(--accent);
+  }
+
+  .email:hover :global(svg) {
+    transform: translate(3px, -3px);
+  }
+
+  .channels {
+    margin-top: 32px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .footer {
+    padding: 28px 0 40px;
+    color: var(--faint);
+    font-size: 0.88rem;
+  }
+
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px 24px;
+  }
+
+  .footer a {
+    color: var(--muted);
+    transition: color 0.2s;
+  }
+
+  .footer a:hover {
+    color: var(--accent);
+  }
+</style>

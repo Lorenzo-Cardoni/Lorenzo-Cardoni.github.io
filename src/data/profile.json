@@ -1,0 +1,52 @@
+{
+  "name": "Lorenzo Cardoni",
+  "jobTitle": "AI Engineer",
+  "location": "Ancona, Italy",
+  "photo": "profile.jpg",
+  "resumeUrl": "/Cardoni_Lorenzo_Resume.pdf",
+  "email": "cardonilorenzo31@gmail.com",
+
+  "headline": "I build computer vision and LLM systems that hold up outside the notebook.",
+  "intro": "AI Engineer with a background in automation and embedded systems. I work across the whole path of a model: data, training, and deployment on the hardware or in the business process where it has to run.",
+
+  "status": [
+    { "label": "Now", "value": "Junior AI & Data Specialist at Inim Electronics" },
+    { "label": "Focus", "value": "Computer vision, LLM applications, edge AI" },
+    { "label": "Degree", "value": "MSc Computer and Automation Engineering, 110/110 cum laude" },
+    { "label": "Paper", "value": "Co-author, IEEE/ASME MESA 2024" }
+  ],
+
+  "about": [
+    "I studied Computer and Automation Engineering at Università Politecnica delle Marche, where control theory, microcontrollers and machine learning shared the same timetable. That mix still shapes how I work: I care about the model, and just as much about the sensor feeding it and the device running it.",
+    "Today I work at Inim Electronics on R&D for computer vision products and on LLM-based automation of business processes. Before that I built data pipelines and an enterprise LLM integration at Lega del Filo d'Oro, and spent my thesis injecting faults into a drone flight controller to train models that detect them."
+  ],
+
+  "focus": [
+    {
+      "title": "Computer vision and edge AI",
+      "text": "Object detection with the YOLO family, small-object detection, and models sized for constrained devices such as Jetson boards and STM32 microcontrollers."
+    },
+    {
+      "title": "LLM applications",
+      "text": "Enterprise chatbots, multimodal LLM workflows and assistants connected to business data, built to automate real processes rather than demo well."
+    },
+    {
+      "title": "Data and embedded systems",
+      "text": "ETL pipelines in Python and SQL, plus the control and firmware side: MATLAB, Simulink, C/C++ and hardware-in-the-loop testing."
+    }
+  ],
+
+  "socials": [
+    { "name": "GitHub", "url": "https://github.com/Lorenzo-Cardoni", "icon": "github", "handle": "Lorenzo-Cardoni" },
+    { "name": "LinkedIn", "url": "https://it.linkedin.com/in/lorenzocardoni", "icon": "linkedin", "handle": "in/lorenzocardoni" }
+  ],
+
+  "seo": {
+    "siteUrl": "https://lorenzo-cardoni.github.io/",
+    "title": "Lorenzo Cardoni | AI Engineer",
+    "description": "Lorenzo Cardoni is an AI Engineer based in Ancona, Italy, working on computer vision, LLM applications and edge AI. Portfolio of projects, experience and publications.",
+    "keywords": "Lorenzo Cardoni, AI Engineer, computer vision, LLM, edge AI, machine learning, deep learning, YOLO, Python, portfolio",
+    "lang": "en",
+    "ogImage": "/og.png"
+  }
+}

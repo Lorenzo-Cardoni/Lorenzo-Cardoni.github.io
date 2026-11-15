@@ -1,20 +1,16 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
-import tailwindcss from '@tailwindcss/vite';
-import icon from 'astro-icon';
 import sitemap from '@astrojs/sitemap';
 
-import homeData from './src/data/home.json';
+import profile from './src/data/profile.json';
 
-
-const siteUrl = process.env.SITE_URL || homeData.siteUrl || undefined;
+// SITE_URL can override the URL from profile.json at build time (e.g. for a custom domain).
+const siteUrl = process.env.SITE_URL || profile.seo.siteUrl;
 
 // https://astro.build/config
 export default defineConfig({
   site: siteUrl,
-  vite: {
-    plugins: [tailwindcss()]
-  },
-
-  integrations: [icon(), sitemap()]
+  integrations: [sitemap()],
+  // Hide the Astro toolbar that `npm run dev` shows at the bottom of the page.
+  devToolbar: { enabled: false },
 });

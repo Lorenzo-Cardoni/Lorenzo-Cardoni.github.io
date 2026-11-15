@@ -1,0 +1,145 @@
+---
+import SectionHeading from './SectionHeading.astro';
+import experience from '../data/experience.json';
+---
+
+<section class="section" id="experience">
+  <div class="container">
+    <SectionHeading
+      index="02"
+      label="Experience"
+      title="Where I have worked."
+      lede="From motor test benches and embedded prototypes to data platforms and production AI."
+    />
+
+    <ol class="list">
+      {
+        experience.map((job) => (
+          <li class="job" data-reveal>
+            <div class="meta">
+              <p class="period mono">{job.period}</p>
+              <p class="type mono">{job.type}</p>
+            </div>
+            <div class="body">
+              <h3>{job.role}</h3>
+              <p class="company">{job.company}</p>
+              <p class="summary">{job.summary}</p>
+              <ul class="points">
+                {job.highlights.map((h) => (
+                  <li>{h}</li>
+                ))}
+              </ul>
+              <ul class="tags" aria-label="Technologies">
+                {job.skills.map((s) => (
+                  <li class="tag">{s}</li>
+                ))}
+              </ul>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .job {
+    display: grid;
+    grid-template-columns: 200px minmax(0, 1fr);
+    gap: 12px clamp(24px, 5vw, 64px);
+    padding: clamp(24px, 4vw, 36px) 0;
+    border-top: 1px solid var(--line);
+  }
+
+  .job:last-child {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .period {
+    color: var(--text);
+    font-size: 0.82rem;
+    padding-top: 5px;
+  }
+
+  .type {
+    margin-top: 6px;
+    color: var(--faint);
+  }
+
+  /* The current role gets a live marker */
+  .job:first-child .period::before {
+    content: '';
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-soft);
+    vertical-align: 1px;
+  }
+
+  h3 {
+    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
+  }
+
+  .company {
+    margin-top: 4px;
+    color: var(--accent);
+    font-weight: 500;
+  }
+
+  .summary {
+    margin-top: 14px;
+    max-width: 44em;
+  }
+
+  .points {
+    margin-top: 12px;
+    max-width: 46em;
+    display: grid;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.97rem;
+  }
+
+  .points li {
+    position: relative;
+    padding-left: 20px;
+  }
+
+  .points li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.72em;
+    width: 8px;
+    height: 1px;
+    background: var(--line-strong);
+  }
+
+  .tags {
+    margin-top: 18px;
+  }
+
+  @media (max-width: 719px) {
+    .job {
+      grid-template-columns: 1fr;
+    }
+
+    .meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 4px 14px;
+    }
+
+    .period {
+      padding-top: 0;
+    }
+
+    .type {
+      margin-top: 0;
+    }
+  }
+</style>

@@ -1,92 +1,64 @@
 import type { APIRoute } from 'astro';
-import localHomeData from '../data/home.json';
-import localCareerData from '../data/career.json';
-import localProjectsData from '../data/projects.json';
-import localTechData from '../data/tech.json';
+import profile from '../data/profile.json';
+import experience from '../data/experience.json';
+import projects from '../data/projects.json';
+import skills from '../data/skills.json';
+import background from '../data/background.json';
 
+// Plain-text summary of the site for LLM crawlers, generated from the same data as the page.
 export const GET: APIRoute = async () => {
-  const isApiLive = import.meta.env.PROD;
-  const BASE_URL = import.meta.env.PUBLIC_API_BASE_URL;
+  const siteUrl = profile.seo.siteUrl.replace(/\/$/, '');
 
-  let home = localHomeData;
-  let career = localCareerData;
-  let projects = localProjectsData;
-  let tech = localTechData;
+  const experienceStr = experience
+    .map((job) => `- **${job.role}**, ${job.company} (${job.period})\n${job.highlights.map((h) => `  - ${h}`).join('\n')}`)
+    .join('\n');
 
-  if (isApiLive && BASE_URL) {
-    try {
-      const [homeRes, careerRes, projectsRes, techRes] = await Promise.all([
-        fetch(`${BASE_URL}/home`),
-        fetch(`${BASE_URL}/career`),
-        fetch(`${BASE_URL}/projects`),
-        fetch(`${BASE_URL}/tech`),
-      ]);
-      if (homeRes.ok) home = await homeRes.json();
-      if (careerRes.ok) career = await careerRes.json();
-      if (projectsRes.ok) projects = await projectsRes.json();
-      if (techRes.ok) tech = await techRes.json();
-    } catch (error) {
-      console.error('[llms.txt] API fetch failed, falling back to local JSON data', error);
-    }
-  }
+  const allProjects = [...projects.featured, ...projects.more];
+  const projectsStr = allProjects
+    .map((p) => `- **${p.title}:** ${p.description}${p.link ? ` (${p.link})` : ''}`)
+    .join('\n');
 
-  const siteUrl = (home.siteUrl || 'https://your-domain.com').replace(/\/$/, '');
+  const publicationsStr = background.publications
+    .map((p) => `- ${p.authors.join(', ')}. "${p.title}". ${p.venue}, ${p.date}. https://doi.org/${p.doi}`)
+    .join('\n');
 
-  const techCategoriesStr = tech.categories
-    ? tech.categories
-        .map((cat: any) => `- **${cat.title}:** ${cat.skills.map((s: any) => s.name).join(', ')}`)
-        .join('\n')
-    : '';
+  const educationStr = background.education
+    .map((e) => `- **${e.degree}**, ${e.school} (${e.period}), ${e.grade}. Thesis: ${e.thesis}.`)
+    .join('\n');
 
-  const careerStr = Array.isArray(career)
-    ? career
-        .map((item: any) => `- **${item.role}** — ${item.company} (${item.period})\n  * ${item.description}`)
-        .join('\n')
-    : '';
+  const skillsStr = skills.map((g) => `- **${g.title}:** ${g.skills.join(', ')}`).join('\n');
 
-  const projectsStr = Array.isArray(projects)
-    ? projects
-        .map((proj: any) => `- **${proj.title}:** ${proj.description}${proj.link ? ` (${proj.link})` : ''}`)
-        .join('\n')
-    : '';
+  const linksStr = profile.socials.map((s) => `- **${s.name}:** ${s.url}`).join('\n');
 
-  const socialsStr = Array.isArray(home.socials)
-    ? home.socials
-        .filter((s: any) => s.url && s.url !== '#' && s.url !== '')
-        .map((s: any) => `- **${s.name}:** ${s.url}`)
-        .join('\n')
-    : '';
+  const markdown = `# ${profile.name}
 
-  const markdown = `# ${home.name}
-
-> ${home.description}
+> ${profile.seo.description}
 
 ## Overview
-${home.name} is a ${home.jobTitle || 'Lead Software Engineer'}${home.location ? ` based in ${home.location}` : ''}. ${home.description}
+${profile.name} is an ${profile.jobTitle} based in ${profile.location}. Currently: ${profile.status[0].value}. Focus: ${profile.status[1].value}.
 
-## Key Information
-${home.location ? `- **Location:** ${home.location}` : ''}
-${home.availability ? `- **Availability:** ${home.availability}` : ''}
-- **Portfolio:** ${siteUrl}
-${home.resumeUrl ? `- **Resume:** ${home.resumeUrl}` : ''}
+## Experience
+${experienceStr}
 
-## Technical Skills & Categories
-${techCategoriesStr}
-
-## Experience & Education
-${careerStr}
-
-## Featured Projects
+## Projects
 ${projectsStr}
 
-## Contact & Links
+## Publications
+${publicationsStr}
+
+## Education
+${educationStr}
+
+## Skills
+${skillsStr}
+
+## Contact and links
 - **Website:** ${siteUrl}
-${socialsStr}
+- **Email:** ${profile.email}
+${linksStr}
 `;
 
   return new Response(markdown.trim() + '\n', {
-    headers: {
-      'Content-Type': 'text/plain; charset=utf-8',
-    },
+    headers: { 'Content-Type': 'text/plain; charset=utf-8' },
   });
 };
