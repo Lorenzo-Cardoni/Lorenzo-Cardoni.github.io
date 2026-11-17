@@ -3,17 +3,18 @@ import SectionHeading from './SectionHeading.astro';
 import Icon from './Icon.astro';
 import profile from '../data/profile.json';
 import background from '../data/background.json';
+import { anchorId } from '../utils/timeline';
 
 const { publications, education, challenges } = background;
 ---
 
 <section class="section" id="education">
   <div class="container">
-    <SectionHeading index="04" label="Research and education" title="Publication, degrees and competitions." />
+    <SectionHeading label="Research and education" title="Publication, degrees and competitions." />
 
     {
       publications.map((pub) => (
-        <article class="pub" data-reveal>
+        <article class="pub" id={anchorId('paper', pub.doi)} data-entry>
           <p class="kicker mono">Publication · {pub.date}</p>
           <h3>{pub.title}</h3>
           <p class="authors">
@@ -35,11 +36,11 @@ const { publications, education, challenges } = background;
 
     <div class="columns">
       <div>
-        <h3 class="col-title mono">Education</h3>
+        <h3 class="col-title">Education</h3>
         <ul class="stack">
           {
             education.map((e) => (
-              <li class="item" data-reveal>
+              <li class="item" id={anchorId('degree', e.degree)} data-entry>
                 <p class="period mono">{e.period}</p>
                 <h4>{e.degree}</h4>
                 <p class="school">
@@ -59,11 +60,11 @@ const { publications, education, challenges } = background;
       </div>
 
       <div>
-        <h3 class="col-title mono">Competitions</h3>
+        <h3 class="col-title">Competitions</h3>
         <ul class="stack">
           {
             challenges.map((c) => (
-              <li class="item" data-reveal>
+              <li class="item" id={anchorId('competition', c.title)} data-entry>
                 <p class="period mono">{c.period}</p>
                 <h4>{c.title}</h4>
                 <p class="detail">{c.description}</p>
@@ -95,7 +96,6 @@ const { publications, education, challenges } = background;
   .pub h3 {
     margin-top: 12px;
     max-width: 26em;
-    font-size: clamp(1.25rem, 2.6vw, 1.6rem);
     line-height: 1.22;
   }
 
@@ -120,7 +120,7 @@ const { publications, education, challenges } = background;
   }
 
   .pub .link {
-    margin-top: 18px;
+    margin-top: 8px;
     overflow-wrap: anywhere;
   }
 
@@ -134,10 +134,6 @@ const { publications, education, challenges } = background;
   .col-title {
     padding-bottom: 14px;
     border-bottom: 1px solid var(--line);
-    color: var(--faint);
-    font-weight: 400;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
   }
 
   .item {

@@ -13,4 +13,6 @@ export default defineConfig({
   integrations: [sitemap()],
   // Hide the Astro toolbar that `npm run dev` shows at the bottom of the page.
   devToolbar: { enabled: false },
+  // three.js, loaded only by /play, is a single ~600 kB chunk (about 150 kB gzipped).
+  vite: { build: { chunkSizeWarningLimit: 800 } },
 });

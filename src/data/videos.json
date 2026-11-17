@@ -1,0 +1,514 @@
+{
+  "uav-fault-diagnosis": {
+    "problem": {
+      "statement": "A diagnostic module has to be tested against faults that would crash a real drone.",
+      "detail": "So the faults are injected in simulation, while a real flight controller flies the mission."
+    },
+    "approach": {
+      "heading": "Hardware-in-the-loop, with faults on demand",
+      "nodes": [
+        {
+          "title": "Simulated drone",
+          "text": "UAV dynamics in Simulink at 100 Hz"
+        },
+        {
+          "title": "Fault injection",
+          "text": "Sensor and actuator faults, set from a MATLAB mask",
+          "key": true
+        },
+        {
+          "title": "Pixhawk 6X",
+          "text": "PX4 flight controller on real hardware"
+        },
+        {
+          "title": "Fault classifier",
+          "text": "Decision tree on 23 signal features"
+        }
+      ]
+    },
+    "poc": {
+      "heading": "A fault injected at a chosen instant",
+      "media": {
+        "type": "signals",
+        "items": [
+          {
+            "label": "Freezing",
+            "fault": "freeze"
+          },
+          {
+            "label": "Bias",
+            "fault": "bias"
+          },
+          {
+            "label": "Drift",
+            "fault": "drift"
+          }
+        ],
+        "legend": [
+          "True signal",
+          "Sensor reading"
+        ]
+      },
+      "facts": [
+        {
+          "value": "45 flights",
+          "text": "simulated on 3 missions, with and without faults"
+        },
+        {
+          "value": "4 faults",
+          "text": "to diagnose on accelerometer, gyroscope, magnetometer and GPS"
+        },
+        {
+          "value": "3 intensities",
+          "text": "for each fault: low, intermediate and high"
+        }
+      ]
+    },
+    "results": {
+      "heading": "Accuracy on test data",
+      "bars": [
+        {
+          "label": "Simulation computer",
+          "value": 93.7,
+          "display": "93.7%"
+        },
+        {
+          "label": "Pixhawk flight controller",
+          "value": 85,
+          "display": "85%"
+        }
+      ],
+      "max": 100,
+      "tiles": [
+        {
+          "value": "14 KB to 4 KB",
+          "text": "tree rewritten as if-else code"
+        },
+        {
+          "value": "5 s filter",
+          "text": "on the labels removes most false alarms"
+        },
+        {
+          "value": "65 Hz",
+          "text": "on the controller, 100 Hz in simulation"
+        }
+      ]
+    },
+    "outro": {
+      "label": "Next",
+      "items": [
+        "Fault-tolerant control that reacts to a detected fault",
+        "TinyML models that fit the controller's memory",
+        "A wider set of faults in the dataset"
+      ]
+    }
+  },
+  "super-resolution-yolo": {
+    "problem": {
+      "statement": "Small objects carry too few pixels for a detector to work with.",
+      "detail": "The target: handguns and knives in surveillance footage, on Jetson-class hardware."
+    },
+    "approach": {
+      "heading": "Super-resolution inside the detector",
+      "nodes": [
+        {
+          "title": "YOLOv5 backbone",
+          "text": "Features from a low-resolution frame"
+        },
+        {
+          "title": "DCGAN generator",
+          "text": "Upscales each feature map",
+          "key": true
+        },
+        {
+          "title": "YOLOv5 head",
+          "text": "Detection on the larger maps"
+        }
+      ]
+    },
+    "poc": {
+      "heading": "Three generators, one for each scale",
+      "media": {
+        "type": "scales",
+        "items": [
+          {
+            "from": "28 × 28 × 128",
+            "to": "52 × 52 × 128",
+            "a": 28,
+            "b": 52
+          },
+          {
+            "from": "14 × 14 × 256",
+            "to": "26 × 26 × 256",
+            "a": 14,
+            "b": 26
+          },
+          {
+            "from": "7 × 7 × 512",
+            "to": "13 × 13 × 512",
+            "a": 7,
+            "b": 13
+          }
+        ],
+        "via": "Generator"
+      },
+      "facts": [
+        {
+          "value": "DCGAN",
+          "text": "generator and discriminator trained on backbone features"
+        },
+        {
+          "value": "4 input sizes",
+          "text": "224, 320, 416 and 512 px for the YOLOv5 runs"
+        },
+        {
+          "value": "Open issue",
+          "text": "GAN training has not converged yet"
+        }
+      ]
+    },
+    "results": {
+      "heading": "YOLOv5 mAP50 by input size",
+      "bars": [
+        {
+          "label": "224 × 224",
+          "value": 0.59,
+          "display": "0.590"
+        },
+        {
+          "label": "320 × 320",
+          "value": 0.678,
+          "display": "0.678"
+        },
+        {
+          "label": "416 × 416",
+          "value": 0.739,
+          "display": "0.739"
+        },
+        {
+          "label": "512 × 512",
+          "value": 0.767,
+          "display": "0.767"
+        }
+      ],
+      "max": 1,
+      "tiles": [
+        {
+          "value": "1.5 ms",
+          "text": "inference at 416 × 416"
+        },
+        {
+          "value": "0.80",
+          "text": "precision at 416 × 416"
+        },
+        {
+          "value": "0.616",
+          "text": "mAP50 on knives at 416 × 416"
+        }
+      ]
+    },
+    "outro": {
+      "label": "Next",
+      "items": [
+        "Stable GAN training",
+        "Sub-pixel CNN as an alternative upscaler",
+        "Deployment on a Jetson Nano"
+      ]
+    }
+  },
+  "geoposball": {
+    "problem": {
+      "statement": "A diver has to mark precise points on the water surface when resurfacing.",
+      "detail": "The client asked for a sealed device that records position and orientation on its own."
+    },
+    "approach": {
+      "heading": "One sealed logger, four parts",
+      "nodes": [
+        {
+          "title": "WTGAHRS2",
+          "text": "GPS and inertial module"
+        },
+        {
+          "title": "M5Stamp S3",
+          "text": "Microcontroller running the Arduino firmware",
+          "key": true
+        },
+        {
+          "title": "SD card",
+          "text": "Every acquisition, with its timestamp"
+        },
+        {
+          "title": "Wi-Fi link",
+          "text": "Live data within 20 m"
+        }
+      ]
+    },
+    "poc": {
+      "heading": "Built, sealed and tested in the water",
+      "media": {
+        "type": "image",
+        "image": "geoposball-inside.png",
+        "alt": "Inside of the GeoPosBall: battery board, SD card reader and the GPS and inertial module with its status LED",
+        "fit": "contain"
+      },
+      "facts": [
+        {
+          "value": "Record button",
+          "text": "screwed in fully, it marks a point in the log"
+        },
+        {
+          "value": "15 s",
+          "text": "of samples saved for each marked point"
+        },
+        {
+          "value": "PDOP under 4",
+          "text": "is the threshold for a usable GPS fix"
+        }
+      ]
+    },
+    "results": {
+      "heading": "Samples logged in each field session",
+      "bars": [
+        {
+          "label": "24 Nov 2023, site 1",
+          "value": 2755,
+          "display": "2,755"
+        },
+        {
+          "label": "24 Nov 2023, site 2",
+          "value": 3556,
+          "display": "3,556"
+        },
+        {
+          "label": "1 Dec 2023",
+          "value": 2873,
+          "display": "2,873"
+        },
+        {
+          "label": "5 Dec 2023",
+          "value": 2627,
+          "display": "2,627"
+        }
+      ],
+      "max": 4000,
+      "tiles": [
+        {
+          "value": "IP68",
+          "text": "waterproof enclosure"
+        },
+        {
+          "value": "TRL 5",
+          "text": "reached for the client"
+        },
+        {
+          "value": "Pool and sea",
+          "text": "trials before delivery"
+        }
+      ]
+    },
+    "outro": {
+      "label": "Delivered with",
+      "items": [
+        "A user manual for the client",
+        "Arduino code open to custom Wi-Fi and sampling settings",
+        "A MATLAB receiver and Python notebooks for the data"
+      ]
+    }
+  },
+  "volleyball-detection": {
+    "problem": {
+      "statement": "Match analysis starts from knowing where every player and the ball are.",
+      "detail": "This first step finds both in ordinary match footage."
+    },
+    "approach": {
+      "heading": "YOLOv11 fine-tuned on match frames",
+      "nodes": [
+        {
+          "title": "Roboflow dataset",
+          "text": "314 labelled frames, 2 classes"
+        },
+        {
+          "title": "YOLOv11m",
+          "text": "100 epochs at 1216 px",
+          "key": true
+        },
+        {
+          "title": "Detections",
+          "text": "Players and ball, frame by frame"
+        }
+      ]
+    },
+    "poc": {
+      "heading": "The detector on match footage",
+      "media": {
+        "type": "clip",
+        "clip": "volleyball-detections.mp4",
+        "poster": "volleyball.jpg",
+        "alt": "Volleyball match footage with a detection box on every player and on the ball"
+      },
+      "facts": [
+        {
+          "value": "251 / 32 / 31",
+          "text": "frames for training, validation and test"
+        },
+        {
+          "value": "4.8 hours",
+          "text": "of training on one GPU"
+        },
+        {
+          "value": "2 classes",
+          "text": "player and ball"
+        }
+      ]
+    },
+    "results": {
+      "heading": "Average precision at IoU 0.5",
+      "bars": [
+        {
+          "label": "Player",
+          "value": 0.927,
+          "display": "0.927"
+        },
+        {
+          "label": "Ball",
+          "value": 0.841,
+          "display": "0.841"
+        },
+        {
+          "label": "All classes",
+          "value": 0.884,
+          "display": "0.884"
+        }
+      ],
+      "max": 1,
+      "tiles": [
+        {
+          "value": "0.875",
+          "text": "precision"
+        },
+        {
+          "value": "0.867",
+          "text": "recall"
+        },
+        {
+          "value": "0.400",
+          "text": "mAP50-95"
+        }
+      ]
+    },
+    "outro": {
+      "label": "Next",
+      "items": [
+        "Separate models for the ball and the players",
+        "Player tracking across frames",
+        "Mapping the action onto a top-down court"
+      ]
+    }
+  },
+  "ebike-stm32": {
+    "problem": {
+      "statement": "A riderless bicycle has to keep its balance with a traction motor and a steering motor.",
+      "detail": "This project moved its control firmware from a Renesas board to an STM32H745."
+    },
+    "approach": {
+      "heading": "From a Wi-Fi command to the two motors",
+      "nodes": [
+        {
+          "title": "Wi-Fi commands",
+          "text": "Sent from MATLAB through an ESP32"
+        },
+        {
+          "title": "STM32H745",
+          "text": "One timed loop for control, sensing and telemetry",
+          "key": true
+        },
+        {
+          "title": "Motor drivers",
+          "text": "PWM for traction and steering"
+        },
+        {
+          "title": "Encoders and IMU",
+          "text": "Position, speed and roll"
+        }
+      ]
+    },
+    "poc": {
+      "heading": "One 1 ms tick, four task rates",
+      "media": {
+        "type": "schedule",
+        "window": 100,
+        "unit": "ms",
+        "rows": [
+          {
+            "label": "Steering",
+            "every": 10
+          },
+          {
+            "label": "Traction",
+            "every": 20
+          },
+          {
+            "label": "IMU",
+            "every": 50
+          },
+          {
+            "label": "Wi-Fi",
+            "every": 100
+          }
+        ]
+      },
+      "facts": [
+        {
+          "value": "5 commands",
+          "text": "over Wi-Fi: start, stop, forced stop, log on, log off"
+        },
+        {
+          "value": "2 encoders",
+          "text": "read by hardware timers in encoder mode"
+        },
+        {
+          "value": "Team of 3",
+          "text": "students on one bike, academic year 2021/22"
+        }
+      ]
+    },
+    "results": {
+      "heading": "Encoder counts per shaft turn",
+      "bars": [
+        {
+          "label": "Steering motor",
+          "value": 132000,
+          "display": "132,000"
+        },
+        {
+          "label": "Traction motor",
+          "value": 2652,
+          "display": "2,652"
+        }
+      ],
+      "max": 132000,
+      "tiles": [
+        {
+          "value": "Every part tested",
+          "text": "PWM, encoders, IMU, Wi-Fi and display, one at a time"
+        },
+        {
+          "value": "1 ms tick",
+          "text": "from SysTick drives the whole schedule"
+        },
+        {
+          "value": "Open issue",
+          "text": "the PID loops did not drive the motors correctly"
+        }
+      ]
+    },
+    "outro": {
+      "label": "Next",
+      "items": [
+        "Working PID loops for the two motors",
+        "A hardware timer in place of SysTick",
+        "Filtered IMU data and a current sensor"
+      ]
+    }
+  }
+}

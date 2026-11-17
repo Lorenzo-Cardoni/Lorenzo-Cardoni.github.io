@@ -6,12 +6,12 @@ import background from '../data/background.json';
 
 <section class="section" id="skills">
   <div class="container">
-    <SectionHeading index="05" label="Skills" title="Tools I work with." />
+    <SectionHeading label="Skills" title="Tools I work with." />
 
     <dl class="groups">
       {
         skills.map((group) => (
-          <div class="group" data-reveal>
+          <div class="group">
             <dt>{group.title}</dt>
             <dd>
               <ul class="tags">
@@ -23,7 +23,7 @@ import background from '../data/background.json';
           </div>
         ))
       }
-      <div class="group" data-reveal>
+      <div class="group">
         <dt>Languages</dt>
         <dd>
           <ul class="tags">

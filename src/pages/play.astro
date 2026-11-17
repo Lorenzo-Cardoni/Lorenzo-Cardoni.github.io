@@ -1,0 +1,1208 @@
+---
+// The portfolio as a 3D island to fly over. Every entry of the data files becomes a place;
+// the text of each one is printed here as HTML and the game (src/game/) only draws the world.
+import { Image, getImage } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import Layout from '../layouts/Layout.astro';
+import Icon from '../components/Icon.astro';
+import profile from '../data/profile.json';
+import { resolveAssetImage } from '../utils/images';
+import { GROUPS, buildWorld, clientData } from '../game/stations';
+
+const world = buildWorld();
+const stations = await Promise.all(
+  world.stations.map(async (s) => ({ ...s, img: s.entry.image ? await resolveAssetImage(s.entry.image) : null })),
+);
+const groups = GROUPS.map((g) => ({ ...g, items: stations.filter((s) => s.group === g.id) })).filter((g) => g.items.length);
+// Logos for the boards in front of the places: src/assets/logos/<file>, resized for the canvas.
+const logoFiles = import.meta.glob<{ default: ImageMetadata }>('/src/assets/logos/*.{png,jpg,jpeg,webp,svg}', { eager: true });
+const logoUrls = new Map<string, string>();
+for (const [path, mod] of Object.entries(logoFiles)) {
+  const file = path.split('/').pop()!;
+  const keepAlpha = /\.(png|svg|webp)$/i.test(file);
+  const built = await getImage({ src: mod.default, width: Math.min(800, mod.default.width), format: keepAlpha ? 'webp' : 'jpg' });
+  logoUrls.set(file, built.src);
+}
+const data = JSON.stringify(clientData(world, (file) => logoUrls.get(file)));
+const total = stations.length;
+const years = world.gates.map((g) => Number(g.label)).filter(Boolean);
+const span = years.length ? `${Math.min(...years)} to today` : 'start to today';
+
+const title = `The island | ${profile.name}`;
+const description = `${profile.name}'s portfolio as a 3D island: fly a drone over ${total} places, one for every job, degree and project.`;
+---
+
+<Layout title={title} description={description} path="play/" edgeToEdge>
+  <main id="main" class="game">
+    <div id="stage" class="stage" aria-hidden="false"></div>
+
+    <!-- Detection box drawn around the place in view, like the portrait on the home page -->
+    <div id="detect" class="detect" hidden aria-hidden="true">
+      <span id="detect-label" class="detect-label"></span>
+      <i class="c tl"></i><i class="c tr"></i><i class="c bl"></i><i class="c br"></i>
+    </div>
+
+    <header class="hud top">
+      <a class="chip back" href="/" aria-label="Back to the portfolio">
+        <Icon name="arrow-left" size={16} />
+        <span class="when-wide" aria-hidden="true">Portfolio</span>
+      </a>
+      <p class="chip counter mono" aria-live="polite">
+        <span class="when-wide">Logged</span>
+        <strong id="hud-count">0</strong>/<span>{total}</span>
+      </p>
+      <div class="tools">
+        <button class="chip" type="button" data-open-places>
+          <Icon name="list" size={16} />
+          <span class="when-wide">Places</span>
+        </button>
+        <button class="chip icon" type="button" data-fullscreen hidden aria-label="Full screen">
+          <span class="when-window"><Icon name="expand" size={16} /></span>
+          <span class="when-full"><Icon name="shrink" size={16} /></span>
+        </button>
+        <button class="chip icon" type="button" data-theme-toggle aria-label="Switch color theme">
+          <span class="when-dark"><Icon name="sun" size={16} /></span>
+          <span class="when-light"><Icon name="moon" size={16} /></span>
+        </button>
+        <button class="chip icon play-only" type="button" data-help aria-label="Controls and help">
+          <Icon name="help" size={16} />
+        </button>
+      </div>
+    </header>
+
+    <div class="hud bottom-left play-only" aria-hidden="true">
+      <canvas id="minimap" class="minimap" width="168" height="168"></canvas>
+      <p class="stats mono">ALT <span id="hud-alt">0</span> m · SPD <span id="hud-spd">0</span> m/s</p>
+    </div>
+
+    <div id="prompt" class="prompt" hidden>
+      <div class="prompt-text">
+        <p id="prompt-title" class="prompt-title"></p>
+        <p id="prompt-sub" class="prompt-sub mono"></p>
+      </div>
+      <button class="btn" type="button" data-open-entry>
+        Open <kbd class="when-keys">Enter</kbd>
+      </button>
+    </div>
+
+    <button id="ride" class="chip ride" type="button" data-ride hidden>
+      <Icon name="swap" size={16} />
+      <span id="ride-label">Back to the drone</span>
+      <kbd class="when-keys">E</kbd>
+    </button>
+
+    <div class="touch play-only" aria-hidden="true">
+      <div id="stick" class="stick"><span id="stick-knob" class="knob"></span></div>
+      <div class="lift">
+        <button type="button" class="chip icon" data-rise tabindex="-1"><Icon name="up" size={22} /></button>
+        <button type="button" class="chip icon" data-sink tabindex="-1"><Icon name="down" size={22} /></button>
+      </div>
+    </div>
+
+    <p id="toast" class="toast" role="status" aria-live="polite"></p>
+
+    <section id="intro" class="intro" aria-labelledby="intro-title">
+      <div class="intro-card">
+        <p class="eyebrow">{profile.name} · Portfolio in 3D</p>
+        <h1 id="intro-title">The island.</h1>
+        <p class="lede">
+          A survey drone, and an island built from my CV. Each building is a job, a degree, a paper or a project.
+          The road around the island is the timeline, {span}, with a gate for every year: the lit path from the
+          landing pad takes you to the first one.
+        </p>
+        <p class="lede">
+          Fly close to a place and the drone's detector logs it. Open it to read the full entry. {total} places to log.
+        </p>
+
+        <dl class="controls">
+          <div><dt><kbd>W</kbd><kbd>S</kbd> <span class="or">or</span> <kbd>↑</kbd><kbd>↓</kbd></dt><dd>Forward, back</dd></div>
+          <div><dt><kbd>A</kbd><kbd>D</kbd> <span class="or">or</span> <kbd>←</kbd><kbd>→</kbd></dt><dd>Turn</dd></div>
+          <div><dt><kbd>Space</kbd><kbd>Shift</kbd></dt><dd>Climb, descend</dd></div>
+          <div><dt><kbd>Enter</kbd></dt><dd>Open the place in view</dd></div>
+          <div><dt><kbd>E</kbd></dt><dd>Take the car, the e-bike or the boat</dd></div>
+          <div><dt><kbd>P</kbd></dt><dd>List of places, with autopilot</dd></div>
+          <div><dt>Drag, wheel</dt><dd>Look around, zoom</dd></div>
+        </dl>
+        <p class="lede">
+          The drone is not the only way around: land next to the Bosch car, the e-bike or the GeoPosBall boat and take it.
+        </p>
+        <ul class="touch-note">
+          <li><strong>Stick</strong> on the left: fly forward and back, turn.</li>
+          <li><strong>Arrows</strong> on the right: climb and descend.</li>
+          <li><strong>Drag</strong> anywhere else to look around, <strong>pinch</strong> to zoom.</li>
+          <li><strong>Open</strong> appears when a place is in view; <strong>Places</strong> flies you anywhere on autopilot.</li>
+        </ul>
+
+        <div class="intro-actions">
+          <button class="btn" type="button" data-start>
+            Start flight
+            <Icon name="arrow-right" size={16} />
+          </button>
+          <button class="btn btn--ghost" type="button" data-open-places>
+            <Icon name="list" size={16} />
+            Browse the places
+          </button>
+          <a class="link" href="/">Read the classic portfolio</a>
+        </div>
+        <p class="no-gl-note">
+          This browser cannot draw 3D graphics, so the island stays hidden. Every place is still in the list above.
+        </p>
+      </div>
+    </section>
+
+    <aside id="sheet" class="sheet" hidden aria-label="Place details">
+      <div class="sheet-head">
+        <button class="chip icon" type="button" data-close-sheet aria-label="Close and keep flying">
+          <Icon name="close" size={18} />
+        </button>
+      </div>
+      {
+        stations.map((s) => (
+          <article class="entry" data-entry={s.id} hidden>
+            <p class="kicker mono">
+              <span class="tagline">{s.tag}</span>
+              {s.entry.kicker}
+            </p>
+            <h2>{s.entry.title}</h2>
+            {s.entry.sub && <p class="sub">{s.entry.sub}</p>}
+            {s.img && (
+              <figure class="shot">
+                <Image src={s.img} alt={s.entry.imageAlt} widths={[400, 640]} sizes="(max-width: 599px) 92vw, 420px" loading="lazy" />
+              </figure>
+            )}
+            {s.entry.text.map((t) => (
+              <p class="text">{t}</p>
+            ))}
+            {s.entry.points.length > 0 && (
+              <ul class="points">
+                {s.entry.points.map((p) => (
+                  <li>{p}</li>
+                ))}
+              </ul>
+            )}
+            {s.entry.facts.length > 0 && (
+              <dl class="facts">
+                {s.entry.facts.map((f) => (
+                  <div>
+                    <dt class="mono">{f.label}</dt>
+                    <dd>{f.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            )}
+            {s.entry.lists.map((l) => (
+              <div class="group">
+                <h3 class="mono">{l.title}</h3>
+                <ul class="tags">
+                  {l.items.map((i) => (
+                    <li class="tag">{i}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            {s.entry.tags.length > 0 && (
+              <ul class="tags" aria-label="Technologies">
+                {s.entry.tags.map((t) => (
+                  <li class="tag">{t}</li>
+                ))}
+              </ul>
+            )}
+            {s.entry.links.length > 0 && (
+              <div class="links">
+                {s.entry.links.map((l) => (
+                  <a
+                    class={l.style === 'btn' ? 'btn' : l.style === 'ghost' ? 'btn btn--ghost' : 'link'}
+                    href={l.href}
+                    target={l.external ? '_blank' : undefined}
+                    rel={l.external ? 'noopener' : undefined}
+                  >
+                    {l.icon && <Icon name={l.icon} size={16} />}
+                    {l.label}
+                    {l.style === 'link' && <Icon name="arrow-up-right" size={15} />}
+                  </a>
+                ))}
+              </div>
+            )}
+          </article>
+        ))
+      }
+      <footer class="sheet-foot play-only">
+        <button class="btn btn--ghost" type="button" data-next>
+          Fly to the nearest new place
+          <Icon name="arrow-right" size={16} />
+        </button>
+      </footer>
+    </aside>
+
+    <dialog id="places" class="places" aria-labelledby="places-title">
+      <header class="places-head">
+        <div>
+          <p class="eyebrow">Places</p>
+          <h2 id="places-title">Where to?</h2>
+          <p class="places-note">Pick a place and the autopilot flies there. A tick marks the ones already logged.</p>
+        </div>
+        <form method="dialog">
+          <button class="chip icon" type="submit" aria-label="Close the list">
+            <Icon name="close" size={18} />
+          </button>
+        </form>
+      </header>
+      {
+        groups.map((g) => (
+          <section class="place-group">
+            <h3 class="mono">{g.label}</h3>
+            <ul>
+              {g.items.map((s) => (
+                <li data-place={s.id}>
+                  <button type="button" data-goto={s.id}>
+                    <span class="tick" aria-hidden="true" />
+                    <span class="place-text">
+                      <span class="place-title">{s.title}</span>
+                      <span class="place-sub">{s.sub}</span>
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ))
+      }
+    </dialog>
+
+    <noscript>
+      <p class="noscript">The island needs JavaScript. <a href="/">Read the classic portfolio</a> instead.</p>
+    </noscript>
+  </main>
+
+  <script is:inline id="game-data" type="application/json" set:html={data} />
+  <script>
+    import '../game/game';
+  </script>
+</Layout>
+
+<style>
+  :global(html),
+  :global(body) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
+  [hidden] {
+    display: none !important;
+  }
+
+  .game {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    color: var(--text);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .stage,
+  .stage :global(canvas) {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    outline: none;
+  }
+
+  /* ---------- HUD ---------- */
+
+  .hud {
+    position: absolute;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  .hud > *,
+  .tools > * {
+    pointer-events: auto;
+  }
+
+  .top {
+    inset: 0 0 auto 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: max(12px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) 0 max(16px, env(safe-area-inset-left));
+  }
+
+  .tools {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 14px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--bg) 78%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      color 0.2s;
+  }
+
+  .chip.icon {
+    padding: 0;
+  }
+
+  .chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .counter {
+    gap: 4px;
+    cursor: default;
+    color: var(--muted);
+    font-size: 0.8rem;
+  }
+
+  .counter:hover {
+    border-color: var(--line-strong);
+    color: var(--muted);
+  }
+
+  .counter strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  :global([data-theme='dark']) .when-light,
+  :global([data-theme='light']) .when-dark {
+    display: none;
+  }
+
+  .when-dark,
+  .when-light,
+  .when-window,
+  .when-full {
+    line-height: 0;
+  }
+
+  :global(body.is-full) .when-window,
+  :global(body:not(.is-full)) .when-full {
+    display: none;
+  }
+
+  .bottom-left {
+    left: max(16px, env(safe-area-inset-left));
+    bottom: max(16px, env(safe-area-inset-bottom));
+    display: grid;
+    gap: 8px;
+  }
+
+  .minimap {
+    width: 168px;
+    height: 168px;
+    border: 1px solid var(--line-strong);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--bg) 70%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .stats {
+    color: var(--muted);
+    font-size: 0.72rem;
+    text-shadow: 0 1px 2px var(--bg);
+  }
+
+  /* ---------- Detection box ---------- */
+
+  .detect {
+    position: absolute;
+    left: 0;
+    top: 0;
+    z-index: 3;
+    pointer-events: none;
+    will-change: transform, width, height;
+  }
+
+  .detect-label {
+    position: absolute;
+    left: -2px;
+    bottom: 100%;
+    margin-bottom: 6px;
+    padding: 4px 7px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+    border-radius: 3px;
+    opacity: 0.75;
+  }
+
+  .c {
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border: 0 solid var(--accent);
+    opacity: 0.75;
+  }
+
+  .detect.is-locked .c,
+  .detect.is-locked .detect-label {
+    opacity: 1;
+  }
+
+  .tl {
+    top: 0;
+    left: 0;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .tr {
+    top: 0;
+    right: 0;
+    border-top-width: 2px;
+    border-right-width: 2px;
+  }
+
+  .bl {
+    bottom: 0;
+    left: 0;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .br {
+    bottom: 0;
+    right: 0;
+    border-bottom-width: 2px;
+    border-right-width: 2px;
+  }
+
+  /* ---------- Prompt ---------- */
+
+  .prompt {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    bottom: max(20px, env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    width: max-content;
+    max-width: min(520px, calc(100vw - 32px));
+    padding: 10px 10px 10px 18px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: color-mix(in srgb, var(--bg) 84%, transparent);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: var(--shadow);
+  }
+
+  .prompt-text {
+    min-width: 0;
+  }
+
+  .prompt-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.25;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prompt-sub {
+    color: var(--muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .prompt .btn {
+    flex: none;
+  }
+
+  kbd {
+    display: inline-block;
+    min-width: 1.8em;
+    padding: 2px 6px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    line-height: 1.3;
+    text-align: center;
+    opacity: 0.8;
+  }
+
+  .prompt kbd {
+    margin-left: 4px;
+  }
+
+  /* ---------- Vehicle switch ---------- */
+
+  .ride {
+    position: absolute;
+    z-index: 5;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: max(20px, env(safe-area-inset-bottom));
+    border-color: var(--accent);
+  }
+
+  .ride kbd {
+    margin-left: 2px;
+  }
+
+  /* On the ground there is nothing to climb */
+  :global(body[data-vehicle='car']) .lift,
+  :global(body[data-vehicle='bike']) .lift,
+  :global(body[data-vehicle='boat']) .lift {
+    visibility: hidden;
+  }
+
+  /* ---------- Toast ---------- */
+
+  .toast {
+    position: absolute;
+    z-index: 6;
+    left: 50%;
+    top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+    transform: translate(-50%, -8px);
+    max-width: calc(100vw - 32px);
+    padding: 10px 16px;
+    border-radius: var(--radius-sm);
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity 0.25s,
+      transform 0.25s var(--ease);
+  }
+
+  .toast:empty {
+    padding: 0;
+  }
+
+  .toast:global(.is-on) {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  /* ---------- Touch controls ---------- */
+
+  .touch {
+    display: none;
+  }
+
+  @media (pointer: coarse) {
+    .touch {
+      position: absolute;
+      z-index: 4;
+      inset: auto 0 0 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 max(16px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+      pointer-events: none;
+    }
+
+    .touch > * {
+      pointer-events: auto;
+    }
+
+    .stick {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 132px;
+      height: 132px;
+      border: 1px solid var(--line-strong);
+      border-radius: 50%;
+      background: color-mix(in srgb, var(--bg) 55%, transparent);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      touch-action: none;
+    }
+
+    .knob {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--accent);
+      opacity: 0.85;
+    }
+
+    .lift {
+      display: grid;
+      gap: 10px;
+    }
+
+    .lift .chip {
+      width: 60px;
+      height: 60px;
+      touch-action: none;
+    }
+
+    /* The map moves up, the stick takes its corner */
+    .bottom-left {
+      bottom: auto;
+      top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+    }
+
+    .minimap {
+      width: 104px;
+      height: 104px;
+    }
+
+    .prompt {
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px);
+    }
+
+    .ride {
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px + 78px);
+    }
+
+    .when-keys {
+      display: none;
+    }
+  }
+
+  /* Phone held sideways: little height, plenty of width. The controls shrink, the prompt sits
+     between the stick and the arrows, and the vehicle button above the arrows. */
+  @media (pointer: coarse) and (max-height: 520px) and (orientation: landscape) {
+    .stick {
+      width: 112px;
+      height: 112px;
+    }
+
+    .knob {
+      width: 46px;
+      height: 46px;
+    }
+
+    .lift .chip {
+      width: 52px;
+      height: 52px;
+    }
+
+    .minimap {
+      width: 84px;
+      height: 84px;
+    }
+
+    .prompt {
+      bottom: max(16px, env(safe-area-inset-bottom));
+      max-width: calc(100vw - 2 * (112px + 48px + max(16px, env(safe-area-inset-left))));
+      padding: 6px 6px 6px 14px;
+      gap: 12px;
+    }
+
+    .ride {
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 124px);
+    }
+
+    .intro {
+      place-items: start center;
+      padding-top: calc(max(12px, env(safe-area-inset-top)) + 60px);
+    }
+  }
+
+  :global(body:not(.is-playing)) .play-only {
+    display: none;
+  }
+
+  /* ---------- Intro ---------- */
+
+  .intro {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    padding: 72px 16px 24px;
+    overflow-y: auto;
+    background: color-mix(in srgb, var(--bg) 55%, transparent);
+    touch-action: pan-y;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .intro-card {
+    width: min(640px, 100%);
+    padding: clamp(24px, 5vw, 44px);
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background:
+      radial-gradient(ellipse 70% 90% at 100% 0%, var(--accent-soft), transparent 60%),
+      color-mix(in srgb, var(--bg-raised) 92%, transparent);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: var(--shadow);
+    animation: rise 0.6s var(--ease) both;
+  }
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+
+  .intro h1 {
+    margin-top: 14px;
+    font-size: clamp(2.4rem, 7vw, 3.6rem);
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .intro .lede {
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 1.02rem;
+  }
+
+  .intro .lede:first-of-type {
+    color: var(--text);
+  }
+
+  .controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px 20px;
+    margin: 24px 0 0;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+  }
+
+  .controls dt {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    color: var(--text);
+    font-size: 0.86rem;
+  }
+
+  .controls dd {
+    margin: 2px 0 0;
+    color: var(--muted);
+    font-size: 0.86rem;
+  }
+
+  .or {
+    color: var(--faint);
+    font-size: 0.78rem;
+  }
+
+  .touch-note {
+    display: none;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  .touch-note li + li {
+    margin-top: 6px;
+  }
+
+  .touch-note strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  @media (pointer: coarse) {
+    .controls {
+      display: none;
+    }
+
+    .touch-note {
+      display: block;
+    }
+  }
+
+  .intro-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 14px;
+    margin-top: 28px;
+  }
+
+  .intro-actions .link {
+    margin-left: 4px;
+  }
+
+  .no-gl-note {
+    display: none;
+    margin-top: 18px;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  :global(body.no-gl) .no-gl-note {
+    display: block;
+  }
+
+  :global(body.no-gl) [data-start],
+  :global(body.no-gl) .controls,
+  :global(body.no-gl) .touch-note {
+    display: none;
+  }
+
+  /* ---------- Entry sheet ---------- */
+
+  .sheet {
+    position: absolute;
+    z-index: 9;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(460px, 100vw);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 12px clamp(16px, 4vw, 28px) 24px;
+    border-left: 1px solid var(--line-strong);
+    background: color-mix(in srgb, var(--bg-raised) 94%, transparent);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: var(--shadow);
+    touch-action: pan-y;
+    user-select: text;
+    -webkit-user-select: text;
+    transform: translateX(24px);
+    opacity: 0;
+    transition:
+      transform 0.3s var(--ease),
+      opacity 0.3s;
+  }
+
+  .sheet:global(.is-open) {
+    transform: none;
+    opacity: 1;
+  }
+
+  .sheet-head {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    display: flex;
+    justify-content: flex-end;
+    padding-top: max(0px, env(safe-area-inset-top));
+  }
+
+  .entry {
+    margin-top: -20px;
+  }
+
+  .kicker {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding-right: 56px;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+  }
+
+  .tagline {
+    padding: 4px 7px;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: 3px;
+    text-transform: none;
+    letter-spacing: 0.02em;
+    font-weight: 600;
+  }
+
+  .entry h2 {
+    margin-top: 16px;
+    font-size: clamp(1.5rem, 4vw, 1.9rem);
+  }
+
+  .sub {
+    margin-top: 8px;
+    color: var(--muted);
+  }
+
+  .shot {
+    margin-top: 18px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: #fff;
+  }
+
+  .shot img {
+    width: 100%;
+    height: auto;
+  }
+
+  .text {
+    margin-top: 14px;
+    color: var(--muted);
+  }
+
+  .points {
+    margin-top: 14px;
+    display: grid;
+    gap: 6px;
+    font-size: 0.95rem;
+  }
+
+  .points li {
+    position: relative;
+    padding-left: 20px;
+  }
+
+  .points li::before {
+    content: '';
+    position: absolute;
+    left: 2px;
+    top: 0.62em;
+    width: 6px;
+    height: 6px;
+    border: 1px solid var(--accent);
+  }
+
+  .facts {
+    margin: 18px 0 0;
+    display: grid;
+    border-top: 1px solid var(--line);
+  }
+
+  .facts div {
+    padding: 10px 0;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .facts dt {
+    color: var(--faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.68rem;
+  }
+
+  .facts dd {
+    margin: 4px 0 0;
+    font-size: 0.94rem;
+  }
+
+  .group {
+    margin-top: 18px;
+  }
+
+  .group h3 {
+    margin-bottom: 8px;
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .entry > .tags {
+    margin-top: 18px;
+  }
+
+  .links {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 18px;
+    margin-top: 20px;
+  }
+
+  .links .btn {
+    max-width: 100%;
+  }
+
+  .sheet-foot {
+    margin-top: 28px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+
+  /* ---------- Places ---------- */
+
+  .places {
+    width: min(620px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: clamp(18px, 3vw, 28px);
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--bg-raised);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    overscroll-behavior: contain;
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .places::backdrop {
+    background: rgba(4, 6, 5, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .places-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .places-head h2 {
+    margin-top: 10px;
+    font-size: 1.6rem;
+  }
+
+  .places-note {
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 0.92rem;
+  }
+
+  .place-group {
+    margin-top: 22px;
+  }
+
+  .place-group h3 {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+    color: var(--faint);
+    font-size: 0.72rem;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .place-group button {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    min-height: 52px;
+    padding: 8px 6px;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .place-group button:hover {
+    background: var(--accent-soft);
+  }
+
+  .tick {
+    flex: none;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--line-strong);
+    border-radius: 3px;
+  }
+
+  [data-place]:global(.is-done) .tick {
+    border-color: var(--accent);
+    background:
+      linear-gradient(45deg, transparent 44%, var(--accent-ink) 44% 56%, transparent 56%),
+      var(--accent);
+  }
+
+  .place-text {
+    display: grid;
+    min-width: 0;
+  }
+
+  .place-title {
+    font-weight: 600;
+    line-height: 1.3;
+  }
+
+  .place-sub {
+    color: var(--muted);
+    font-size: 0.84rem;
+    line-height: 1.35;
+  }
+
+  .noscript {
+    position: absolute;
+    inset: auto 16px 16px;
+    padding: 16px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    background: var(--bg-raised);
+  }
+
+  .noscript a {
+    color: var(--accent);
+  }
+
+  @media (max-width: 899px) and (pointer: fine) {
+    .ride {
+      bottom: calc(max(20px, env(safe-area-inset-bottom)) + 76px);
+      right: 50%;
+      transform: translateX(50%);
+    }
+  }
+
+  @media (max-width: 599px) {
+    .when-wide {
+      display: none;
+    }
+
+    .top,
+    .tools {
+      gap: 6px;
+    }
+
+    .chip {
+      padding: 0 10px;
+    }
+
+    .controls {
+      grid-template-columns: 1fr;
+    }
+
+    .sheet {
+      top: auto;
+      height: min(78dvh, 100%);
+      border-left: 0;
+      border-top: 1px solid var(--line-strong);
+      border-radius: calc(var(--radius) + 4px) calc(var(--radius) + 4px) 0 0;
+      transform: translateY(24px);
+    }
+  }
+</style>

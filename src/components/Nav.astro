@@ -4,6 +4,7 @@ import profile from '../data/profile.json';
 
 const links = [
   { href: '#about', label: 'About' },
+  { href: '#timeline', label: 'Timeline' },
   { href: '#experience', label: 'Experience' },
   { href: '#projects', label: 'Projects' },
   { href: '#education', label: 'Education' },
@@ -33,10 +34,22 @@ const links = [
             </li>
           ))
         }
+        <li class="menu-only">
+          <a href="/play/" data-nav-link>Explore in 3D</a>
+        </li>
+        <li class="menu-only">
+          <a href={profile.resumeUrl} target="_blank" rel="noopener" data-nav-link>
+            Download CV
+          </a>
+        </li>
       </ul>
     </nav>
 
     <div class="actions">
+      <a class="cv play" href="/play/" title="Fly over the portfolio as a 3D island">
+        <Icon name="cube" size={15} />
+        <span>3D</span>
+      </a>
       <a class="cv" href={profile.resumeUrl} target="_blank" rel="noopener">
         <Icon name="download" size={15} />
         <span>CV</span>
@@ -77,6 +90,12 @@ const links = [
       // Storage can be unavailable (private mode); the toggle still works for this visit.
     }
   });
+
+  // Keyboard focus lands at once; smooth scrolling stays for pointer jumps between sections
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Tab') root.style.scrollBehavior = 'auto';
+  });
+  document.addEventListener('pointerdown', () => root.style.removeProperty('scroll-behavior'));
 
   // Mobile menu
   const setMenu = (open: boolean) => {
@@ -151,6 +170,7 @@ const links = [
     display: inline-flex;
     align-items: center;
     gap: 10px;
+    min-height: 44px;
     font-family: var(--font-display);
     font-weight: 600;
     letter-spacing: -0.01em;
@@ -244,13 +264,28 @@ const links = [
     display: inline;
   }
 
-  .menu-btn {
+  .menu-btn,
+  .menu-only {
     display: none;
   }
 
-  @media (max-width: 899px) {
+  @media (max-width: 999px) {
     .menu-btn {
       display: inline-grid;
+    }
+
+    .menu-only {
+      display: block;
+    }
+
+    /* Touch widths: 44px controls */
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+    }
+
+    .cv {
+      height: 44px;
     }
 
     .links {
@@ -285,6 +320,21 @@ const links = [
     .links a[aria-current='true'] {
       background: none;
       color: var(--accent);
+    }
+  }
+
+  .play {
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--line-strong));
+  }
+
+  /* Phones: the CV and 3D links move into the menu so the bar never runs past the screen */
+  @media (max-width: 479px) {
+    .cv {
+      display: none;
+    }
+
+    .bar {
+      gap: 12px;
     }
   }
 </style>

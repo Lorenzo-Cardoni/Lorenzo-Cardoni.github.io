@@ -11,8 +11,10 @@
         "Daniele Sergiacomi",
         "Adriano Mancini"
       ],
+      "shortTitle": "YOLOv8 benchmark for edge AI video surveillance",
       "venue": "IEEE/ASME International Conference on Mechatronic and Embedded Systems and Applications (MESA)",
-      "date": "2024",
+      "venueShort": "IEEE/ASME MESA 2024",
+      "date": "Sep 2024",
       "doi": "10.1109/MESA61532.2024.10704889"
     }
   ],

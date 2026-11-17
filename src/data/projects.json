@@ -22,7 +22,8 @@
         "QGroundControl"
       ],
       "link": "https://github.com/Lorenzo-Cardoni/multifault-diagnosis-pixhawk-6",
-      "linkLabel": "Repository"
+      "linkLabel": "Repository",
+      "video": "uav-fault-diagnosis"
     },
     {
       "title": "Super-resolution for small-object detection on edge devices",
@@ -44,7 +45,8 @@
         "GAN"
       ],
       "link": "https://github.com/Lorenzo-Cardoni/Super-resolution-yolo5v-CV-DL",
-      "linkLabel": "Repository"
+      "linkLabel": "Repository",
+      "video": "super-resolution-yolo"
     },
     {
       "title": "GeoPosBall: underwater geospatial data logger",
@@ -66,7 +68,8 @@
         "ESP32-S3"
       ],
       "link": "https://github.com/Lorenzo-Cardoni/GeoPosBall",
-      "linkLabel": "Repository"
+      "linkLabel": "Repository",
+      "video": "geoposball"
     },
     {
       "title": "Volleyball player and ball detection",
@@ -87,7 +90,8 @@
         "Roboflow"
       ],
       "link": "https://github.com/Lorenzo-Cardoni/volleyball-player-detection-with-deep-learning-model",
-      "linkLabel": "Repository"
+      "linkLabel": "Repository",
+      "video": "volleyball-detection"
     },
     {
       "title": "Control of an autonomous e-bike on STM32",
@@ -95,7 +99,7 @@
       "year": "",
       "image": "e-Bike.jpg",
       "imageAlt": "A small blue bicycle on a lab bench fitted with control boards, motor drivers and a steering actuator",
-      "fit": "cover",
+      "fit": "natural",
       "description": "Replaced the original Renesas microcontroller of a self-driving e-bike with an STM32H745 board, then re-integrated and tested the IMU, GPS and encoder along with the vehicle's actuators.",
       "points": [
         "Firmware port to a dual-core STM32H7",
@@ -107,7 +111,8 @@
         "Embedded"
       ],
       "link": "",
-      "linkLabel": ""
+      "linkLabel": "",
+      "video": "ebike-stm32"
     }
   ],
   "more": [

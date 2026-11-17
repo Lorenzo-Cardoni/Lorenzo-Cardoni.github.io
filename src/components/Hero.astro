@@ -82,10 +82,14 @@ const photo = await resolveAssetImage(profile.photo);
 </section>
 
 <style>
+  /* Fills the first screen, so the next section starts below the fold */
   .hero {
     position: relative;
-    padding-top: calc(var(--nav-h) + clamp(40px, 8vw, 88px));
-    padding-bottom: clamp(48px, 7vw, 80px);
+    display: grid;
+    align-content: center;
+    min-height: 100svh;
+    padding-top: calc(var(--nav-h) + clamp(32px, 6vw, 72px));
+    padding-bottom: clamp(40px, 6vw, 72px);
     overflow: hidden;
   }
 
@@ -300,6 +304,7 @@ const photo = await resolveAssetImage(profile.photo);
     margin: 8px 0 0;
     font-size: 0.92rem;
     line-height: 1.45;
+    text-wrap: balance;
   }
 
   @media (max-width: 899px) {
@@ -309,7 +314,7 @@ const photo = await resolveAssetImage(profile.photo);
 
     .portrait {
       order: -1;
-      width: min(240px, 62vw);
+      width: min(190px, 50vw);
     }
 
     .status {

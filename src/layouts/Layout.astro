@@ -4,9 +4,21 @@ import profile from '../data/profile.json';
 import experience from '../data/experience.json';
 import background from '../data/background.json';
 
+interface Props {
+  /** Page title and description; the home page uses the ones in profile.json. */
+  title?: string;
+  description?: string;
+  /** Path of the page, for the canonical link, e.g. "play/". */
+  path?: string;
+  /** Lets a full-screen page draw under the notch; it then keeps its controls clear with env(safe-area-inset-*). */
+  edgeToEdge?: boolean;
+}
+
 const { name, jobTitle, location, socials, seo } = profile;
+const { title = seo.title, description = seo.description, path = '', edgeToEdge = false } = Astro.props;
 
 const siteUrl = (Astro.site?.toString() || seo.siteUrl).replace(/\/$/, '') + '/';
+const pageUrl = new URL(path, siteUrl).href;
 const ogImage = new URL(seo.ogImage, siteUrl).href;
 
 const jsonLd = {
@@ -40,30 +52,30 @@ const jsonLd = {
 <html lang={seo.lang} data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>{seo.title}</title>
-    <meta name="description" content={seo.description} />
+    <meta name="viewport" content={`width=device-width, initial-scale=1.0${edgeToEdge ? ', viewport-fit=cover' : ''}`} />
+    <title>{title}</title>
+    <meta name="description" content={description} />
     <meta name="keywords" content={seo.keywords} />
     <meta name="author" content={name} />
     <meta name="robots" content="index, follow" />
-    <link rel="canonical" href={siteUrl} />
+    <link rel="canonical" href={pageUrl} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="sitemap" href="/sitemap-index.xml" />
 
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:site_name" content={name} />
-    <meta property="og:title" content={seo.title} />
-    <meta property="og:description" content={seo.description} />
-    <meta property="og:url" content={siteUrl} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={pageUrl} />
     <meta property="og:image" content={ogImage} />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content={`${name}, ${jobTitle} in ${location}`} />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content={seo.title} />
-    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
     <meta name="twitter:image" content={ogImage} />
 
     <script is:inline type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
@@ -88,27 +100,5 @@ const jsonLd = {
   <body>
     <a class="skip-link" href="#main">Skip to content</a>
     <slot />
-
-    <script>
-      // Fade sections in as they enter the viewport.
-      const targets = document.querySelectorAll<HTMLElement>('[data-reveal]');
-
-      if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver(
-          (entries) => {
-            for (const entry of entries) {
-              if (entry.isIntersecting) {
-                entry.target.classList.add('is-in');
-                observer.unobserve(entry.target);
-              }
-            }
-          },
-          { rootMargin: '0px 0px -8% 0px', threshold: 0.05 },
-        );
-        targets.forEach((el) => observer.observe(el));
-      } else {
-        targets.forEach((el) => el.classList.add('is-in'));
-      }
-    </script>
   </body>
 </html>

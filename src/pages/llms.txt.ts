@@ -15,7 +15,10 @@ export const GET: APIRoute = async () => {
 
   const allProjects = [...projects.featured, ...projects.more];
   const projectsStr = allProjects
-    .map((p) => `- **${p.title}:** ${p.description}${p.link ? ` (${p.link})` : ''}`)
+    .map((p) => {
+      const video = 'video' in p && p.video ? ` Video: ${siteUrl}/videos/${p.video}.mp4` : '';
+      return `- **${p.title}:** ${p.description}${p.link ? ` (${p.link})` : ''}${video}`;
+    })
     .join('\n');
 
   const publicationsStr = background.publications

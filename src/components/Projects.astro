@@ -4,26 +4,42 @@ import SectionHeading from './SectionHeading.astro';
 import Icon from './Icon.astro';
 import projects from '../data/projects.json';
 import { resolveAssetImage } from '../utils/images';
+import { videos, sceneTiming, END_HOLD } from '../utils/videos';
 
 const featured = await Promise.all(
-  projects.featured.map(async (p) => ({ ...p, img: await resolveAssetImage(p.image) })),
+  projects.featured.map(async (p) => ({
+    ...p,
+    img: await resolveAssetImage(p.image),
+    // A project opens a video only when one is written for it in videos.json.
+    clip: p.video && videos[p.video] ? { slug: p.video, spec: videos[p.video] } : null,
+  })),
 );
+
+const withVideo = featured.filter((p) => p.clip);
+const seconds = Math.round(sceneTiming().total + END_HOLD);
+const length = `0:${String(seconds).padStart(2, '0')}`;
+const count = ['No', 'One', 'Two', 'Three', 'Four', 'Five', 'Six'][withVideo.length] ?? String(withVideo.length);
+const lede =
+  'Thesis, client and personal projects. Most of them end on real hardware.' +
+  (withVideo.length ? ` ${count} of them open a ${seconds}-second video of the work.` : '');
 ---
 
 <section class="section" id="projects">
   <div class="container">
     <SectionHeading
-      index="03"
       label="Projects"
       title="Selected work."
-      lede="Thesis, client and personal projects. Most of them end on real hardware."
+      lede={lede}
     />
 
     <div class="featured">
       {
-        featured.map((p, i) => (
-          <article class="project" data-reveal>
-            <figure class={`shot ${p.fit === 'contain' ? 'shot--contain' : ''}`}>
+        featured.map((p) => (
+          <article class={`project ${p.clip ? 'project--video' : ''}`} data-video-card={p.clip?.slug}>
+            <figure
+              class={`shot ${p.fit === 'contain' ? 'shot--contain' : ''}`}
+              style={p.fit === 'natural' && p.img ? `aspect-ratio: ${p.img.width} / ${p.img.height}` : undefined}
+            >
               {p.img && (
                 <Image
                   src={p.img}
@@ -33,7 +49,21 @@ const featured = await Promise.all(
                   loading="lazy"
                 />
               )}
-              <figcaption class="mono">FIG. {String(i + 1).padStart(2, '0')}</figcaption>
+              {p.clip && (
+                <a
+                  class="play"
+                  href={`/videos/${p.clip.slug}.mp4`}
+                  data-video={p.clip.slug}
+                  aria-haspopup="dialog"
+                  aria-label={`Watch the video: ${p.title}`}
+                >
+                  <span class="play-badge">
+                    <Icon name="play" size={15} />
+                    Watch the video
+                    <span class="mono">{length}</span>
+                  </span>
+                </a>
+              )}
             </figure>
 
             <div class="info">
@@ -53,23 +83,37 @@ const featured = await Promise.all(
                   <li class="tag">{t}</li>
                 ))}
               </ul>
-              {p.link && (
-                <a class="link" href={p.link} target="_blank" rel="noopener">
-                  {p.linkLabel || 'Repository'}
-                  <Icon name="arrow-up-right" size={16} />
-                </a>
-              )}
+              <div class="actions">
+                {p.clip && (
+                  <a
+                    class="btn btn--ghost"
+                    href={`/videos/${p.clip.slug}.mp4`}
+                    data-video={p.clip.slug}
+                    aria-haspopup="dialog"
+                    aria-label={`Watch the video: ${p.title}`}
+                  >
+                    <Icon name="play" size={15} />
+                    Watch the video
+                  </a>
+                )}
+                {p.link && (
+                  <a class="link" href={p.link} target="_blank" rel="noopener">
+                    {p.linkLabel || 'Repository'}
+                    <Icon name="arrow-up-right" size={16} />
+                  </a>
+                )}
+              </div>
             </div>
           </article>
         ))
       }
     </div>
 
-    <h3 class="more-title" data-reveal>More projects</h3>
+    <h3 class="more-title">More projects</h3>
     <ul class="more">
       {
         projects.more.map((p) => (
-          <li class="card" data-reveal>
+          <li class="card">
             <h4>
               {p.link ? (
                 <a href={p.link} target="_blank" rel="noopener">
@@ -91,7 +135,144 @@ const featured = await Promise.all(
       }
     </ul>
   </div>
+
+  {
+    withVideo.map((p) => (
+      <dialog class="video-dialog" data-video-dialog={p.clip!.slug} aria-labelledby={`video-${p.clip!.slug}-title`}>
+        <div class="dialog-body">
+          <header class="dialog-head">
+            <div>
+              <p class="kind mono">
+                {p.kind}
+                {p.year && <span class="year">{p.year}</span>}
+              </p>
+              <h3 id={`video-${p.clip!.slug}-title`}>{p.title}</h3>
+            </div>
+            <form method="dialog">
+              <button class="close" type="submit" aria-label="Close the video">
+                <Icon name="close" />
+              </button>
+            </form>
+          </header>
+
+          <video
+            controls
+            playsinline
+            preload="none"
+            width="1920"
+            height="1080"
+            poster={`/videos/${p.clip!.slug}.jpg`}
+            aria-describedby={`video-${p.clip!.slug}-text`}
+          >
+            <source src={`/videos/${p.clip!.slug}.mp4`} type="video/mp4" />
+          </video>
+
+          <footer class="dialog-foot">
+            <p class="mono">{seconds} seconds, no sound</p>
+            {p.link && (
+              <a class="link" href={p.link} target="_blank" rel="noopener">
+                {p.linkLabel || 'Repository'}
+                <Icon name="arrow-up-right" size={16} />
+              </a>
+            )}
+          </footer>
+
+          <details class="transcript" id={`video-${p.clip!.slug}-text`}>
+            <summary>Read the video as text</summary>
+            <div class="transcript-body">
+              <h4>The problem</h4>
+              <p>
+                {p.clip!.spec.problem.statement} {p.clip!.spec.problem.detail}
+              </p>
+              <h4>Approach</h4>
+              <p>{p.clip!.spec.approach.heading}.</p>
+              <ol>
+                {p.clip!.spec.approach.nodes.map((node) => (
+                  <li>
+                    <strong>{node.title}.</strong> {node.text}.
+                  </li>
+                ))}
+              </ol>
+              <h4>Proof of concept</h4>
+              <p>{p.clip!.spec.poc.heading}.</p>
+              <ul>
+                {p.clip!.spec.poc.facts.map((fact) => (
+                  <li>
+                    <strong>{fact.value}:</strong> {fact.text}.
+                  </li>
+                ))}
+              </ul>
+              <h4>Results</h4>
+              <p>{p.clip!.spec.results.heading}.</p>
+              <ul>
+                {p.clip!.spec.results.bars.map((bar) => (
+                  <li>
+                    {bar.label}: <strong>{bar.display}</strong>
+                  </li>
+                ))}
+                {p.clip!.spec.results.tiles.map((tile) => (
+                  <li>
+                    <strong>{tile.value}:</strong> {tile.text}.
+                  </li>
+                ))}
+              </ul>
+              <h4>{p.clip!.spec.outro.label}</h4>
+              <ul>
+                {p.clip!.spec.outro.items.map((item) => (
+                  <li>{item}.</li>
+                ))}
+              </ul>
+            </div>
+          </details>
+        </div>
+      </dialog>
+    ))
+  }
 </section>
+
+<script>
+  // Featured projects with a video open it in a dialog. Without JavaScript the same links open the file.
+  const dialogs = new Map<string, HTMLDialogElement>();
+  document.querySelectorAll<HTMLDialogElement>('dialog[data-video-dialog]').forEach((dialog) => {
+    dialogs.set(dialog.dataset.videoDialog ?? '', dialog);
+
+    dialog.addEventListener('close', () => dialog.querySelector('video')?.pause());
+    // A click on the backdrop lands on the dialog element itself.
+    dialog.addEventListener('click', (event) => {
+      if (event.target === dialog) dialog.close();
+    });
+  });
+
+  const openVideo = (slug: string | undefined) => {
+    const dialog = slug ? dialogs.get(slug) : undefined;
+    if (!dialog || typeof dialog.showModal !== 'function') return false;
+    dialog.showModal();
+    const video = dialog.querySelector('video');
+    if (video && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      video.play().catch(() => {
+        // Autoplay can be refused; the controls are there.
+      });
+    }
+    return true;
+  };
+
+  document.addEventListener('click', (event) => {
+    const target = event.target as HTMLElement | null;
+    if (!target) return;
+
+    const trigger = target.closest<HTMLElement>('[data-video]');
+    if (trigger) {
+      if (openVideo(trigger.dataset.video)) event.preventDefault();
+      return;
+    }
+
+    // The rest of the card opens the video too, unless the click was on a link or a text selection.
+    const card = target.closest<HTMLElement>('[data-video-card]');
+    if (!card || target.closest('a, button, dialog')) return;
+    if (window.getSelection()?.toString()) return;
+    openVideo(card.dataset.videoCard);
+  });
+</script>
 
 <style>
   .featured {
@@ -140,19 +321,6 @@ const featured = await Promise.all(
     transform: scale(1.025);
   }
 
-  figcaption {
-    position: absolute;
-    left: 10px;
-    bottom: 10px;
-    padding: 4px 7px;
-    border-radius: 3px;
-    background: rgba(9, 12, 11, 0.78);
-    color: #e9efec;
-    font-size: 0.66rem;
-    letter-spacing: 0.08em;
-    line-height: 1;
-  }
-
   .kind {
     color: var(--accent);
     letter-spacing: 0.08em;
@@ -169,7 +337,6 @@ const featured = await Promise.all(
 
   .info h3 {
     margin-top: 12px;
-    font-size: clamp(1.35rem, 2.8vw, 1.8rem);
   }
 
   .desc {
@@ -203,8 +370,207 @@ const featured = await Promise.all(
     margin-top: 18px;
   }
 
-  .info .link {
-    margin-top: 18px;
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 22px;
+    margin-top: 16px;
+  }
+
+  /* Projects with a video: the whole card opens it */
+  .project--video {
+    cursor: pointer;
+  }
+
+  .play {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: flex-end;
+    padding: 12px;
+    border-radius: inherit;
+  }
+
+  .play:focus-visible {
+    outline-offset: -4px;
+  }
+
+  .play-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+    padding: 0 14px;
+    border: 1px solid rgba(233, 239, 236, 0.22);
+    border-radius: var(--radius-sm);
+    background: rgba(9, 12, 11, 0.86);
+    color: #e9efec;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition:
+      background-color 0.2s,
+      border-color 0.2s,
+      color 0.2s,
+      transform 0.2s var(--ease);
+  }
+
+  .play-badge .mono {
+    padding-left: 8px;
+    border-left: 1px solid rgba(233, 239, 236, 0.28);
+    font-weight: 400;
+  }
+
+  .project--video:hover .play-badge,
+  .play:focus-visible .play-badge {
+    border-color: #c3f25e;
+    background: #c3f25e;
+    color: #0b1205;
+    transform: translateY(-2px);
+  }
+
+  .project--video:hover .play-badge .mono,
+  .play:focus-visible .play-badge .mono {
+    border-left-color: rgba(11, 18, 5, 0.3);
+  }
+
+  /* Video dialog */
+  .video-dialog {
+    width: min(1040px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--bg-raised);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    cursor: auto;
+  }
+
+  .video-dialog::backdrop {
+    background: rgba(4, 6, 5, 0.78);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .video-dialog[open] {
+    animation: dialog-in 0.28s var(--ease);
+  }
+
+  @keyframes dialog-in {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  .dialog-body {
+    padding: clamp(14px, 2.4vw, 24px);
+  }
+
+  .dialog-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .dialog-head h3 {
+    margin-top: 8px;
+  }
+
+  .close {
+    display: inline-grid;
+    flex: none;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      color 0.2s;
+  }
+
+  .close:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .video-dialog video {
+    display: block;
+    width: 100%;
+    height: auto;
+    margin-top: 16px;
+    aspect-ratio: 16 / 9;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: #090c0b;
+  }
+
+  .dialog-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px 20px;
+    margin-top: 8px;
+    color: var(--muted);
+  }
+
+  .transcript {
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.94rem;
+  }
+
+  .transcript summary {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--text);
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .transcript summary:hover {
+    color: var(--accent);
+  }
+
+  .transcript-body {
+    display: grid;
+    gap: 8px;
+    padding-bottom: 8px;
+  }
+
+  .transcript-body h4 {
+    margin-top: 8px;
+    color: var(--text);
+    font-size: 1rem;
+  }
+
+  .transcript-body ul,
+  .transcript-body ol {
+    display: grid;
+    gap: 4px;
+    padding-left: 20px;
+    list-style: square;
+  }
+
+  .transcript-body ol {
+    list-style: decimal;
+  }
+
+  .transcript-body strong {
+    color: var(--text);
+    font-weight: 600;
   }
 
   /* Secondary projects */
@@ -212,7 +578,6 @@ const featured = await Promise.all(
     margin-top: clamp(56px, 9vw, 96px);
     padding-top: 28px;
     border-top: 1px solid var(--line);
-    font-size: 1.25rem;
   }
 
   .more {
@@ -247,6 +612,8 @@ const featured = await Promise.all(
     display: inline-flex;
     align-items: baseline;
     gap: 6px;
+    padding-block: 11px;
+    margin-block: -11px;
     transition: color 0.2s;
   }
 

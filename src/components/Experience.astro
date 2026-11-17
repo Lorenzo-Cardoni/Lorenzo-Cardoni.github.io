@@ -1,12 +1,12 @@
 ---
 import SectionHeading from './SectionHeading.astro';
 import experience from '../data/experience.json';
+import { anchorId } from '../utils/timeline';
 ---
 
 <section class="section" id="experience">
   <div class="container">
     <SectionHeading
-      index="02"
       label="Experience"
       title="Where I have worked."
       lede="From motor test benches and embedded prototypes to data platforms and production AI."
@@ -15,7 +15,7 @@ import experience from '../data/experience.json';
     <ol class="list">
       {
         experience.map((job) => (
-          <li class="job" data-reveal>
+          <li class="job" id={anchorId('work', job.company)} data-entry>
             <div class="meta">
               <p class="period mono">{job.period}</p>
               <p class="type mono">{job.type}</p>
@@ -67,20 +67,16 @@ import experience from '../data/experience.json';
   }
 
   /* The current role gets a live marker */
-  .job:first-child .period::before {
+  .job:first-child .period::after {
     content: '';
     display: inline-block;
     width: 7px;
     height: 7px;
-    margin-right: 9px;
+    margin-left: 11px;
     border-radius: 50%;
     background: var(--accent);
     box-shadow: 0 0 0 4px var(--accent-soft);
     vertical-align: 1px;
-  }
-
-  h3 {
-    font-size: clamp(1.2rem, 2.4vw, 1.45rem);
   }
 
   .company {

@@ -1,5 +1,7 @@
 # build output
 dist/
+# temporary build used while recording the project videos
+.video-build/
 # generated types
 .astro/
 

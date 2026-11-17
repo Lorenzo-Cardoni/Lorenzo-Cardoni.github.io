@@ -14,6 +14,8 @@
   --nav-h: 64px;
   --radius: 10px;
   --radius-sm: 6px;
+  --fs-h2: clamp(1.8rem, 4.2vw, 2.75rem);
+  --fs-h3: clamp(1.2rem, 2.2vw, 1.4rem);
   --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
 }
 
@@ -27,7 +29,7 @@
   --line-strong: #323d3a;
   --text: #e9efec;
   --muted: #9aa7a2;
-  --faint: #6b7873;
+  --faint: #82908a;
   --accent: #c3f25e;
   --accent-ink: #0b1205;
   --accent-soft: rgba(195, 242, 94, 0.1);
@@ -44,7 +46,7 @@
   --line-strong: #c3cdbe;
   --text: #111713;
   --muted: #4f5b54;
-  --faint: #76827a;
+  --faint: #626e66;
   --accent: #2c6e12;
   --accent-ink: #ffffff;
   --accent-soft: rgba(44, 110, 18, 0.09);
@@ -103,6 +105,14 @@ h3 {
   line-height: 1.12;
   letter-spacing: -0.02em;
   text-wrap: balance;
+}
+
+h2 {
+  font-size: var(--fs-h2);
+}
+
+h3 {
+  font-size: var(--fs-h3);
 }
 
 p {
@@ -248,6 +258,7 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  min-height: 44px;
   color: var(--accent);
   font-weight: 600;
   font-size: 0.94rem;
@@ -261,19 +272,27 @@ button {
   transform: translate(2px, -2px);
 }
 
-/* ---------- Reveal on scroll (only when JS is running) ---------- */
-
-.js [data-reveal] {
-  opacity: 0;
-  transform: translateY(14px);
-  transition:
-    opacity 0.6s var(--ease),
-    transform 0.6s var(--ease);
+/* The page stays put behind an open dialog */
+html:has(dialog[open]) {
+  overflow: hidden;
 }
 
-.js [data-reveal].is-in {
-  opacity: 1;
-  transform: none;
+/* ---------- Entry reached from the timeline ---------- */
+
+[data-entry]:target {
+  animation: entry-arrive 2s var(--ease);
+}
+
+@keyframes entry-arrive {
+  from {
+    outline: 2px solid var(--accent);
+    outline-offset: 8px;
+  }
+
+  to {
+    outline: 2px solid transparent;
+    outline-offset: 8px;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -281,23 +300,10 @@ button {
     scroll-behavior: auto;
   }
 
-  .js [data-reveal] {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
   *,
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-  }
-}
-
-@media print {
-  .js [data-reveal] {
-    opacity: 1;
-    transform: none;
   }
 }
