@@ -7,13 +7,14 @@ import Layout from '../layouts/Layout.astro';
 import Icon from '../components/Icon.astro';
 import profile from '../data/profile.json';
 import { resolveAssetImage } from '../utils/images';
-import { GROUPS, buildWorld, clientData } from '../game/stations';
+import { ZONES, buildWorld, clientData } from '../game/stations';
 
 const world = buildWorld();
 const stations = await Promise.all(
   world.stations.map(async (s) => ({ ...s, img: s.entry.image ? await resolveAssetImage(s.entry.image) : null })),
 );
-const groups = GROUPS.map((g) => ({ ...g, items: stations.filter((s) => s.group === g.id) })).filter((g) => g.items.length);
+// The places list follows the way through the island: zone by zone, in the order places are got to know.
+const groups = ZONES.map((g) => ({ ...g, items: stations.filter((s) => s.zone === g.id).sort((a, b) => a.order - b.order) })).filter((g) => g.items.length);
 // Logos for the boards in front of the places: src/assets/logos/<file>, resized for the canvas.
 const logoFiles = import.meta.glob<{ default: ImageMetadata }>('/src/assets/logos/*.{png,jpg,jpeg,webp,svg}', { eager: true });
 const logoUrls = new Map<string, string>();
@@ -27,9 +28,19 @@ const data = JSON.stringify(clientData(world, (file) => logoUrls.get(file)));
 const total = stations.length;
 const years = world.gates.map((g) => Number(g.label)).filter(Boolean);
 const span = years.length ? `${Math.min(...years)} to today` : 'start to today';
+const spanIt = years.length ? `dal ${Math.min(...years)} a oggi` : 'dall’inizio a oggi';
+const ZONE_IT: Record<string, string> = {
+  start: 'Partenza',
+  plateau: 'L’altopiano',
+  valley: 'La valle',
+  yard: 'Il cortile',
+  harbour: 'Il porto',
+  islet: 'L’isolotto',
+  mountain: 'La montagna',
+};
 
-const title = `The island | ${profile.name}`;
-const description = `${profile.name}'s portfolio as a 3D island: fly a drone over ${total} places, one for every job, degree and project.`;
+const title = `Isola Vitae | ${profile.name}`;
+const description = `Isola Vitae: ${profile.name}'s portfolio as a 3D island. Explore ${total} places as a ghost, one for every job, degree and project.`;
 ---
 
 <Layout title={title} description={description} path="play/" edgeToEdge>
@@ -43,28 +54,34 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     </div>
 
     <header class="hud top">
-      <a class="chip back" href="/" aria-label="Back to the portfolio">
+      <a class="chip back" href="/" aria-label="Back to the portfolio" data-it-aria="Torna al portfolio">
         <Icon name="arrow-left" size={16} />
         <span class="when-wide" aria-hidden="true">Portfolio</span>
       </a>
       <p class="chip counter mono" aria-live="polite">
-        <span class="when-wide">Logged</span>
+        <span class="when-wide" data-it="Conosciuti">Known</span>
         <strong id="hud-count">0</strong>/<span>{total}</span>
       </p>
       <div class="tools">
+        <button class="chip icon play-only" type="button" data-open-forms hidden aria-label="Change shape" data-it-aria="Cambia forma">
+          <Icon name="swap" size={16} />
+        </button>
         <button class="chip" type="button" data-open-places>
           <Icon name="list" size={16} />
-          <span class="when-wide">Places</span>
+          <span class="when-wide" data-it="Luoghi">Places</span>
         </button>
-        <button class="chip icon" type="button" data-fullscreen hidden aria-label="Full screen">
+        <button class="chip lang mono" type="button" data-lang-toggle aria-label="Language: English or Italian" data-it-aria="Lingua: inglese o italiano">
+          <span data-lang-label>EN</span>
+        </button>
+        <button class="chip icon" type="button" data-fullscreen hidden aria-label="Full screen" data-it-aria="Schermo intero">
           <span class="when-window"><Icon name="expand" size={16} /></span>
           <span class="when-full"><Icon name="shrink" size={16} /></span>
         </button>
-        <button class="chip icon" type="button" data-theme-toggle aria-label="Switch color theme">
+        <button class="chip icon" type="button" data-theme-toggle aria-label="Switch color theme" data-it-aria="Cambia tema dei colori">
           <span class="when-dark"><Icon name="sun" size={16} /></span>
           <span class="when-light"><Icon name="moon" size={16} /></span>
         </button>
-        <button class="chip icon play-only" type="button" data-help aria-label="Controls and help">
+        <button class="chip icon play-only" type="button" data-help aria-label="Controls and help" data-it-aria="Comandi e aiuto">
           <Icon name="help" size={16} />
         </button>
       </div>
@@ -72,23 +89,30 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
 
     <div class="hud bottom-left play-only" aria-hidden="true">
       <canvas id="minimap" class="minimap" width="168" height="168"></canvas>
-      <p class="stats mono">ALT <span id="hud-alt">0</span> m · SPD <span id="hud-spd">0</span> m/s</p>
+      <p id="hud-stats" class="stats mono">SPD 0 m/s</p>
     </div>
 
-    <div id="prompt" class="prompt" hidden>
-      <div class="prompt-text">
-        <p id="prompt-title" class="prompt-title"></p>
-        <p id="prompt-sub" class="prompt-sub mono"></p>
+    <div id="card" class="card" hidden>
+      <div class="card-text">
+        <p id="card-kicker" class="card-kicker mono"></p>
+        <p id="card-title" class="card-title"></p>
+        <p id="card-sub" class="card-sub"></p>
       </div>
-      <button class="btn" type="button" data-open-entry>
-        Open <kbd class="when-keys">Enter</kbd>
+      <button class="chip card-more" type="button" data-open-entry>
+        <span data-it="Altro">More</span> <kbd class="when-keys">Enter</kbd>
       </button>
     </div>
 
     <button id="ride" class="chip ride" type="button" data-ride hidden>
       <Icon name="swap" size={16} />
-      <span id="ride-label">Back to the drone</span>
+      <span id="ride-label" data-it="Possiedi">Possess</span>
       <kbd class="when-keys">E</kbd>
+    </button>
+
+    <!-- The secret: shown once the explosives are found -->
+    <button id="blast" class="chip blast play-only" type="button" data-blast hidden aria-label="Drop a charge" data-it-aria="Lascia una carica">
+      <span aria-hidden="true">💣</span>
+      <kbd class="when-keys">X</kbd>
     </button>
 
     <div class="touch play-only" aria-hidden="true">
@@ -99,52 +123,52 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
       </div>
     </div>
 
+    <p id="objective" class="objective play-only" hidden aria-live="polite"></p>
+
     <p id="toast" class="toast" role="status" aria-live="polite"></p>
 
     <section id="intro" class="intro" aria-labelledby="intro-title">
       <div class="intro-card">
         <p class="eyebrow">{profile.name} · Portfolio in 3D</p>
-        <h1 id="intro-title">The island.</h1>
-        <p class="lede">
-          A survey drone, and an island built from my CV. Each building is a job, a degree, a paper or a project.
-          The road around the island is the timeline, {span}, with a gate for every year: the lit path from the
-          landing pad takes you to the first one.
+        <h1 id="intro-title">Isola Vitae.</h1>
+        <p class="lede" data-it={`Un piccolo fantasma, e un’isola costruita dal mio CV. Ogni edificio è un lavoro, una laurea o un progetto. La strada attorno alla montagna è la linea del tempo, ${spanIt}, con un portale per ogni anno.`}>
+          A small ghost, and an island built from my CV. Each building is a job, a degree or a project.
+          The road around the mountain is the timeline, {span}, with a gate for every year.
         </p>
-        <p class="lede">
-          Fly close to a place and the drone's detector logs it. Open it to read the full entry. {total} places to log.
+        <p class="goal" data-it-html={`<strong>Obiettivo:</strong> conoscere tutti i ${total} luoghi: basta avvicinarsi a uno. La riga in alto e la freccia arancione mostrano sempre cosa fare.`}>
+          <strong>Goal:</strong> get to know all {total} places: walk up to one and it is known. The line at the top of the
+          screen and the orange arrow always show what to do next.
         </p>
-
         <dl class="controls">
-          <div><dt><kbd>W</kbd><kbd>S</kbd> <span class="or">or</span> <kbd>↑</kbd><kbd>↓</kbd></dt><dd>Forward, back</dd></div>
-          <div><dt><kbd>A</kbd><kbd>D</kbd> <span class="or">or</span> <kbd>←</kbd><kbd>→</kbd></dt><dd>Turn</dd></div>
-          <div><dt><kbd>Space</kbd><kbd>Shift</kbd></dt><dd>Climb, descend</dd></div>
-          <div><dt><kbd>Enter</kbd></dt><dd>Open the place in view</dd></div>
-          <div><dt><kbd>E</kbd></dt><dd>Take the car, the e-bike or the boat</dd></div>
-          <div><dt><kbd>P</kbd></dt><dd>List of places, with autopilot</dd></div>
-          <div><dt>Drag, wheel</dt><dd>Look around, zoom</dd></div>
+          <div><dt><kbd>W</kbd><kbd>S</kbd> <span class="or" data-it="o">or</span> <kbd>↑</kbd><kbd>↓</kbd></dt><dd data-it="Avanti, indietro">Forward, back</dd></div>
+          <div><dt><kbd>A</kbd><kbd>D</kbd> <span class="or" data-it="o">or</span> <kbd>←</kbd><kbd>→</kbd></dt><dd data-it="Gira">Turn</dd></div>
+          <div><dt><kbd>E</kbd></dt><dd data-it="Possiedi la macchina vicina, lasciala">Possess the machine nearby, leave it</dd></div>
+          <div><dt><kbd>Q</kbd></dt><dd data-it="Trasformati in una macchina già posseduta">Turn into a machine possessed before</dd></div>
+          <div><dt><kbd>Space</kbd><kbd>Shift</kbd></dt><dd data-it="Sali, scendi (drone)">Climb, descend (drone)</dd></div>
+          <div><dt><kbd>Enter</kbd> <kbd>Esc</kbd></dt><dd data-it="Apri, chiudi la pagina del luogo inquadrato">Open, close the page of the place in view</dd></div>
+          <div><dt><kbd>P</kbd></dt><dd data-it="Elenco dei luoghi, per spostarti">List of places, to travel</dd></div>
+          <div><dt data-it="Trascina, rotella">Drag, wheel</dt><dd data-it="Guarda attorno, zoom">Look around, zoom</dd></div>
         </dl>
-        <p class="lede">
-          The drone is not the only way around: land next to the Bosch car, the e-bike or the GeoPosBall boat and take it.
-        </p>
         <ul class="touch-note">
-          <li><strong>Stick</strong> on the left: fly forward and back, turn.</li>
-          <li><strong>Arrows</strong> on the right: climb and descend.</li>
-          <li><strong>Drag</strong> anywhere else to look around, <strong>pinch</strong> to zoom.</li>
-          <li><strong>Open</strong> appears when a place is in view; <strong>Places</strong> flies you anywhere on autopilot.</li>
+          <li data-it-html="<strong>Joystick</strong> a sinistra: avanti e indietro, gira."><strong>Stick</strong> on the left: forward and back, turn.</li>
+          <li data-it-html="<strong>Possiedi</strong> compare vicino a una macchina; <strong>Lascia</strong> ti fa uscire; il pulsante delle forme in alto ti trasforma in una macchina già posseduta."><strong>Possess</strong> appears next to a machine; <strong>Leave</strong> gets you out; the shapes button at the top turns you into any machine possessed before.</li>
+          <li data-it-html="<strong>Frecce</strong> a destra, sul drone: sali e scendi."><strong>Arrows</strong> on the right, on the drone: climb and descend.</li>
+          <li data-it-html="<strong>Trascina</strong> altrove per guardarti attorno, <strong>pizzica</strong> per lo zoom."><strong>Drag</strong> anywhere else to look around, <strong>pinch</strong> to zoom.</li>
+          <li data-it-html="Avvicinati a un luogo per conoscerlo: una piccola scheda lo mostra, e <strong>Altro</strong> apre la sua pagina. <strong>Luoghi</strong> ti riporta in ogni parte dell’isola già raggiunta.">Walk up to a place to get to know it: a small card shows it, and <strong>More</strong> opens its page. <strong>Places</strong> takes you back to any part of the island you reached.</li>
         </ul>
 
         <div class="intro-actions">
           <button class="btn" type="button" data-start>
-            Start flight
+            <span data-it="Inizia">Start</span>
             <Icon name="arrow-right" size={16} />
           </button>
           <button class="btn btn--ghost" type="button" data-open-places>
             <Icon name="list" size={16} />
-            Browse the places
+            <span data-it="Sfoglia i luoghi">Browse the places</span>
           </button>
-          <a class="link" href="/">Read the classic portfolio</a>
+          <a class="link" href="/" data-it="Leggi il portfolio classico">Read the classic portfolio</a>
         </div>
-        <p class="no-gl-note">
+        <p class="no-gl-note" data-it="Questo browser non può disegnare grafica 3D, quindi l’isola resta nascosta. Tutti i luoghi sono comunque nell’elenco qui sopra.">
           This browser cannot draw 3D graphics, so the island stays hidden. Every place is still in the list above.
         </p>
       </div>
@@ -152,7 +176,7 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
 
     <aside id="sheet" class="sheet" hidden aria-label="Place details">
       <div class="sheet-head">
-        <button class="chip icon" type="button" data-close-sheet aria-label="Close and keep flying">
+        <button class="chip icon" type="button" data-close-sheet aria-label="Close" data-it-aria="Chiudi">
           <Icon name="close" size={18} />
         </button>
       </div>
@@ -226,23 +250,17 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
           </article>
         ))
       }
-      <footer class="sheet-foot play-only">
-        <button class="btn btn--ghost" type="button" data-next>
-          Fly to the nearest new place
-          <Icon name="arrow-right" size={16} />
-        </button>
-      </footer>
     </aside>
 
     <dialog id="places" class="places" aria-labelledby="places-title">
       <header class="places-head">
         <div>
-          <p class="eyebrow">Places</p>
-          <h2 id="places-title">Where to?</h2>
-          <p class="places-note">Pick a place and the autopilot flies there. A tick marks the ones already logged.</p>
+          <p class="eyebrow" data-it="Luoghi">Places</p>
+          <h2 id="places-title" data-it="Dove vuoi andare?">Where to?</h2>
+          <p class="places-note" data-it="I luoghi lungo il percorso. Scegline uno in una parte dell’isola già raggiunta e il fantasma ricompare lì; quando il drone vola, il pilota automatico ti porta ovunque. Una spunta segna i luoghi conosciuti, un trattino quelli ancora irraggiungibili.">The places along the way. Pick one in a part of the island you have reached and the ghost reappears there; once the drone flies, the autopilot takes you anywhere. A tick marks the places known, a dash the ones still out of reach.</p>
         </div>
         <form method="dialog">
-          <button class="chip icon" type="submit" aria-label="Close the list">
+          <button class="chip icon" type="submit" aria-label="Close the list" data-it-aria="Chiudi l’elenco">
             <Icon name="close" size={18} />
           </button>
         </form>
@@ -250,12 +268,13 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
       {
         groups.map((g) => (
           <section class="place-group">
-            <h3 class="mono">{g.label}</h3>
+            <h3 class="mono" data-it={ZONE_IT[g.id]}>{g.label}</h3>
             <ul>
               {g.items.map((s) => (
-                <li data-place={s.id}>
+                <li data-place={s.id} data-zone={s.zone}>
                   <button type="button" data-goto={s.id}>
                     <span class="tick" aria-hidden="true" />
+                    <span class="place-n mono" aria-hidden="true">{s.order + 1}</span>
                     <span class="place-text">
                       <span class="place-title">{s.title}</span>
                       <span class="place-sub">{s.sub}</span>
@@ -269,8 +288,66 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
       }
     </dialog>
 
+    <dialog id="forms" class="forms" aria-labelledby="forms-title">
+      <header class="places-head">
+        <div>
+          <p class="eyebrow" data-it="Forme">Shapes</p>
+          <h2 id="forms-title" data-it="Trasformati in…">Turn into…</h2>
+          <p class="places-note when-keys" data-it="Frecce per scegliere, Invio per trasformarti, Q o Esc per chiudere.">Arrows to choose, Enter to turn, Q or Esc to close.</p>
+        </div>
+        <form method="dialog">
+          <button class="chip icon" type="submit" aria-label="Close" data-it-aria="Chiudi">
+            <Icon name="close" size={18} />
+          </button>
+        </form>
+      </header>
+      <div class="form-grid">
+        {
+          [
+            ['ghost', 'Ghost', 'Walks; no water, no heights', 'Fantasma', 'Cammina; niente acqua né altezze'],
+            ['bike', 'E-bike', 'Climbs the ramp', 'E-bike', 'Sale la rampa'],
+            ['car', 'Bosch car', 'Fast; jumps the river', 'Auto Bosch', 'Veloce; salta il fiume'],
+            ['robot', 'Litter robot', 'Clears litter', 'Robot spazzino', 'Toglie la spazzatura'],
+            ['boat', 'Boat', 'Crosses the sea', 'Barca', 'Attraversa il mare'],
+            ['drone', 'Drone', 'Flies anywhere', 'Drone', 'Vola ovunque'],
+          ].map(([id, name, use, nameIt, useIt]) => (
+            <button type="button" class="form" data-form={id} hidden={id !== 'ghost'}>
+              <span class="form-icon">
+                <Icon name={id} size={30} />
+              </span>
+              <span class="form-name" data-it={nameIt}>{name}</span>
+              <span class="form-use" data-it={useIt}>{use}</span>
+            </button>
+          ))
+        }
+      </div>
+    </dialog>
+
+    <dialog id="finale" class="finale" aria-labelledby="finale-title">
+      <p class="eyebrow" data-it={`${total} luoghi su ${total}`}>{total} of {total} places</p>
+      <h2 id="finale-title" data-it="Conosci tutta l’isola.">You know the whole island.</h2>
+      <p class="lede" data-it="Grazie della visita. Questo è tutto il mio CV, dal primo anno di università a oggi. Se qualcosa ti ha colpito, ne parlerei volentieri.">
+        Thanks for visiting. That is everything on my CV, from the first year of university to today. If something
+        caught your eye, I would be glad to talk about it.
+      </p>
+      <div class="intro-actions">
+        <a class="btn" href={`mailto:${profile.email}`}>
+          <Icon name="mail" size={16} />
+          <span data-it="Contattami">Get in touch</span>
+        </a>
+        <a class="btn btn--ghost" href={profile.resumeUrl} target="_blank" rel="noopener">
+          <Icon name="download" size={16} />
+          <span data-it="Scarica il CV">Download CV</span>
+        </a>
+      </div>
+      <div class="finale-foot">
+        <button class="link" type="button" data-keep-exploring data-it="Continua a esplorare">Keep exploring</button>
+        <button class="link" type="button" data-start-over data-it="Ricomincia">Start over</button>
+      </div>
+    </dialog>
+
     <noscript>
-      <p class="noscript">The island needs JavaScript. <a href="/">Read the classic portfolio</a> instead.</p>
+      <p class="noscript">Isola Vitae needs JavaScript. <a href="/">Read the classic portfolio</a> instead.</p>
     </noscript>
   </main>
 
@@ -498,9 +575,9 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     border-right-width: 2px;
   }
 
-  /* ---------- Prompt ---------- */
+  /* ---------- Card of the place in view ---------- */
 
-  .prompt {
+  .card {
     position: absolute;
     z-index: 5;
     left: 50%;
@@ -508,40 +585,65 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     transform: translateX(-50%);
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: 12px;
     width: max-content;
-    max-width: min(520px, calc(100vw - 32px));
-    padding: 10px 10px 10px 18px;
+    max-width: min(440px, calc(100vw - 2 * 260px));
+    padding: 8px 8px 8px 14px;
     border: 1px solid var(--line-strong);
     border-radius: var(--radius);
     background: color-mix(in srgb, var(--bg) 84%, transparent);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    box-shadow: var(--shadow);
   }
 
-  .prompt-text {
+  .card-text {
     min-width: 0;
   }
 
-  .prompt-title {
+  .card-kicker {
+    color: var(--faint);
+    font-size: 0.66rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card-kicker:global(.is-known) {
+    color: var(--accent);
+  }
+
+  .card-title {
     font-family: var(--font-display);
     font-weight: 600;
+    font-size: 0.92rem;
     line-height: 1.25;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
-  .prompt-sub {
+  .card-sub {
     color: var(--muted);
+    font-size: 0.78rem;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
   }
 
-  .prompt .btn {
+  .card-more {
     flex: none;
+    min-height: 36px;
+    font-size: 0.8rem;
+  }
+
+  .card-more kbd {
+    margin-left: 2px;
+  }
+
+  @media (max-width: 1000px) {
+    .card {
+      max-width: calc(100vw - 2 * 200px);
+    }
   }
 
   kbd {
@@ -557,8 +659,21 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     opacity: 0.8;
   }
 
-  .prompt kbd {
-    margin-left: 4px;
+  .lang {
+    min-width: 44px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  /* The secret's button: above the machine button. */
+  .blast {
+    position: absolute;
+    z-index: 5;
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(max(20px, env(safe-area-inset-bottom)) + 56px);
+    gap: 6px;
+    border-color: #e0602c;
+    font-size: 1.1rem;
   }
 
   /* ---------- Vehicle switch ---------- */
@@ -575,20 +690,54 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     margin-left: 2px;
   }
 
-  /* On the ground there is nothing to climb */
-  :global(body[data-vehicle='car']) .lift,
-  :global(body[data-vehicle='bike']) .lift,
-  :global(body[data-vehicle='boat']) .lift {
+  /* Only the drone climbs */
+  :global(body:not([data-vehicle='drone'])) .lift {
     visibility: hidden;
   }
 
   /* ---------- Toast ---------- */
 
+  /* ---------- Objective ---------- */
+
+  .objective {
+    position: absolute;
+    z-index: 5;
+    left: 50%;
+    top: calc(max(12px, env(safe-area-inset-top)) + 58px);
+    transform: translateX(-50%);
+    max-width: min(560px, calc(100vw - 32px));
+    padding: 7px 14px 7px 30px;
+    border: 1px solid var(--signal, #ff8a4c);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    color: var(--text);
+    font-size: 0.84rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  /* The arrow's color, as a dot in front of the line. */
+  .objective::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    width: 9px;
+    height: 9px;
+    margin-top: -4.5px;
+    border-radius: 50%;
+    background: #ff8a4c;
+  }
+
   .toast {
     position: absolute;
     z-index: 6;
     left: 50%;
-    top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+    top: calc(max(12px, env(safe-area-inset-top)) + 104px);
     transform: translate(-50%, -8px);
     max-width: calc(100vw - 32px);
     padding: 10px 16px;
@@ -608,6 +757,30 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
 
   .toast:empty {
     padding: 0;
+  }
+
+  .toast:global(.is-brief) {
+    max-width: min(340px, calc(100vw - 32px));
+    padding: 5px 10px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    background: color-mix(in srgb, var(--accent) 88%, transparent);
+  }
+
+  @media (max-width: 599px) {
+    .toast {
+      max-width: min(420px, calc(100vw - 32px));
+      padding: 8px 12px;
+      font-size: 0.72rem;
+      line-height: 1.35;
+    }
+
+    .toast:global(.is-brief) {
+      padding: 4px 9px;
+      font-size: 0.66rem;
+    }
   }
 
   .toast:global(.is-on) {
@@ -681,12 +854,52 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
       height: 104px;
     }
 
-    .prompt {
+    .ride {
       bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px);
     }
 
-    .ride {
-      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px + 78px);
+    .blast {
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 148px + 54px);
+    }
+
+    /* Beside the minimap, which takes the top left corner. */
+    .objective {
+      left: calc(max(16px, env(safe-area-inset-left)) + 112px);
+      right: max(16px, env(safe-area-inset-right));
+      transform: none;
+      max-width: none;
+      border-radius: var(--radius-sm);
+      font-size: 0.74rem;
+      text-align: left;
+    }
+
+    .toast {
+      top: calc(max(12px, env(safe-area-inset-top)) + 56px + 104px + 8px);
+    }
+
+    /* On a touch screen the card sits under the minimap, clear of the stick, the arrows and the
+       machine button. */
+    .card {
+      left: max(16px, env(safe-area-inset-left));
+      right: auto;
+      bottom: auto;
+      top: calc(max(12px, env(safe-area-inset-top)) + 56px + 104px + 64px);
+      transform: none;
+      max-width: min(300px, calc(100vw - 32px));
+    }
+
+    /* While playing, a place's page is a panel at the top, clear of the stick and the arrows,
+       so the visitor keeps moving while reading. */
+    :global(body.is-playing) .sheet {
+      top: calc(max(12px, env(safe-area-inset-top)) + 56px);
+      bottom: auto;
+      left: max(8px, env(safe-area-inset-left));
+      right: max(8px, env(safe-area-inset-right));
+      width: auto;
+      height: auto;
+      max-height: 40dvh;
+      border: 1px solid var(--line-strong);
+      border-radius: calc(var(--radius) + 4px);
     }
 
     .when-keys {
@@ -694,8 +907,8 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     }
   }
 
-  /* Phone held sideways: little height, plenty of width. The controls shrink, the prompt sits
-     between the stick and the arrows, and the vehicle button above the arrows. */
+  /* Phone held sideways: little height, plenty of width. The controls shrink, the vehicle button
+     sits above the arrows, and a place's page is a panel on the right, above them. */
   @media (pointer: coarse) and (max-height: 520px) and (orientation: landscape) {
     .stick {
       width: 112px;
@@ -717,20 +930,45 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
       height: 84px;
     }
 
-    .prompt {
-      bottom: max(16px, env(safe-area-inset-bottom));
-      max-width: calc(100vw - 2 * (112px + 48px + max(16px, env(safe-area-inset-left))));
-      padding: 6px 6px 6px 14px;
-      gap: 12px;
-    }
-
     .ride {
       bottom: calc(max(16px, env(safe-area-inset-bottom)) + 124px);
+    }
+
+    .blast {
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 124px + 54px);
+    }
+
+    .card {
+      top: calc(max(12px, env(safe-area-inset-top)) + 56px + 84px + 26px);
+      max-width: min(300px, 40vw);
+    }
+
+    :global(body.is-playing) .sheet {
+      left: auto;
+      width: min(380px, 46vw);
+      max-height: none;
+      bottom: calc(max(16px, env(safe-area-inset-bottom)) + 176px);
     }
 
     .intro {
       place-items: start center;
       padding-top: calc(max(12px, env(safe-area-inset-top)) + 60px);
+    }
+  }
+
+  /* On a computer: larger text throughout, and a larger minimap. */
+  @media (pointer: fine) and (min-width: 900px) {
+    :global(html) {
+      font-size: 112.5%;
+    }
+
+    .minimap {
+      width: 236px;
+      height: 236px;
+    }
+
+    .stats {
+      font-size: 0.8rem;
     }
   }
 
@@ -786,6 +1024,80 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     margin-top: 16px;
     color: var(--muted);
     font-size: 1.02rem;
+  }
+
+  .goal {
+    margin-top: 16px;
+    padding: 10px 14px;
+    border-left: 3px solid var(--accent);
+    background: var(--accent-soft);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+    font-size: 1rem;
+  }
+
+  .goal strong {
+    color: var(--accent);
+  }
+
+  /* ---------- The end ---------- */
+
+  .finale {
+    width: min(560px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: clamp(24px, 5vw, 40px);
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background:
+      radial-gradient(ellipse 70% 90% at 100% 0%, var(--accent-soft), transparent 60%),
+      var(--bg-raised);
+    color: var(--text);
+    box-shadow: var(--shadow);
+    user-select: text;
+    -webkit-user-select: text;
+  }
+
+  .finale::backdrop {
+    background: rgba(4, 6, 5, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .finale h2 {
+    margin-top: 12px;
+    font-size: clamp(1.7rem, 5vw, 2.3rem);
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .finale .lede {
+    margin-top: 14px;
+    color: var(--muted);
+  }
+
+  .finale-foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 20px;
+    margin-top: 22px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+  }
+
+  .finale-foot .link {
+    border: 0;
+    background: none;
+    padding: 8px 0;
+    color: var(--muted);
+    font: inherit;
+    font-size: 0.9rem;
+    cursor: pointer;
+  }
+
+  .finale-foot .link:hover {
+    color: var(--accent);
   }
 
   .intro .lede:first-of-type {
@@ -1047,12 +1359,6 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     max-width: 100%;
   }
 
-  .sheet-foot {
-    margin-top: 28px;
-    padding-top: 18px;
-    border-top: 1px solid var(--line);
-  }
-
   /* ---------- Places ---------- */
 
   .places {
@@ -1132,6 +1438,108 @@ const description = `${profile.name}'s portfolio as a 3D island: fly a drone ove
     height: 14px;
     border: 1.5px solid var(--line-strong);
     border-radius: 3px;
+  }
+
+  .place-n {
+    flex: none;
+    width: 1.6em;
+    color: var(--faint);
+    font-size: 0.74rem;
+    text-align: right;
+  }
+
+  /* ---------- Shapes ---------- */
+
+  .forms {
+    width: min(460px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    padding: clamp(18px, 3vw, 26px);
+    border: 1px solid var(--line-strong);
+    border-radius: calc(var(--radius) + 4px);
+    background: var(--bg-raised);
+    color: var(--text);
+    box-shadow: var(--shadow);
+  }
+
+  .forms::backdrop {
+    background: rgba(4, 6, 5, 0.5);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+    margin-top: 18px;
+  }
+
+  .form {
+    display: grid;
+    justify-items: center;
+    align-content: start;
+    gap: 4px;
+    min-height: 112px;
+    padding: 14px 8px 10px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--text);
+    text-align: center;
+    cursor: pointer;
+    transition:
+      border-color 0.2s,
+      background-color 0.2s;
+  }
+
+  .form:hover,
+  .form:focus-visible {
+    border-color: var(--accent);
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .form-icon {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 4px;
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+  }
+
+  .form:global(.is-current) {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
+  .form-name {
+    font-weight: 600;
+  }
+
+  .form-use {
+    color: var(--muted);
+    font-size: 0.74rem;
+    line-height: 1.3;
+  }
+
+  @media (max-width: 420px) {
+    .form-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  [data-place]:global(.is-locked) .place-text {
+    opacity: 0.45;
+  }
+
+  [data-place]:global(.is-locked) .tick {
+    border-style: dashed;
   }
 
   [data-place]:global(.is-done) .tick {

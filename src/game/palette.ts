@@ -1,22 +1,22 @@
-// Colors of the 3D world, once for the dark theme and once for the light theme, and the shared
-// materials that use them. The accent matches --accent in src/styles/global.css.
+// Colors of the 3D world and the shared materials that use them. The island is always seen by day,
+// in a warm, earthy palette: cream and terracotta, golden grass, dark pines, a turquoise sea and a
+// blue sky. The site's light and dark themes change only the interface around it.
 import * as THREE from 'three';
-
-export type ThemeName = 'dark' | 'light';
+import { addGrain } from './look';
 
 export interface Palette {
   zenith: number;
   horizon: number;
+  /** Glow around the sun, low in the sky. */
+  sunGlow: number;
   // Ground
   sand: number;
   low: number;
+  /** Dry, golden patches in the grass. */
+  dry: number;
   high: number;
   seabed: number;
   shore: number;
-  contour: number;
-  contourA: number;
-  grid: number;
-  gridA: number;
   road: number;
   roadEdge: number;
   site: number;
@@ -28,6 +28,12 @@ export interface Palette {
   dark: number;
   light: number;
   white: number;
+  skin: number;
+  /** The Bosch car's dark blue, and the e-bike's bright blue frame. */
+  navy: number;
+  blue: number;
+  /** The Bosch car's orange. */
+  orange: number;
   window: number;
   accent: number;
   signal: number;
@@ -42,94 +48,61 @@ export interface Palette {
   hemiSky: number;
   hemiGround: number;
   hemi: number;
+  sunColor: number;
   sun: number;
-  /** Light beams add onto a dark sky and are painted over a light one. */
+  /** Haze: its color is the horizon's; it starts and ends at these distances. */
+  fogNear: number;
+  fogFar: number;
+  /** Light beams are painted over the sky, not added onto it. */
   additive: boolean;
   beamA: number;
   stars: number;
 }
 
-export const PALETTES: Record<ThemeName, Palette> = {
-  dark: {
-    zenith: 0x060908,
-    horizon: 0x18241f,
-    sand: 0x3d4234,
-    low: 0x18221d,
-    high: 0x2e3c35,
-    seabed: 0x070f0e,
-    shore: 0x8fa39b,
-    contour: 0xc3f25e,
-    contourA: 0.14,
-    grid: 0xffffff,
-    gridA: 0.04,
-    road: 0x29332f,
-    roadEdge: 0x71827b,
-    site: 0x202a26,
-    water: 0x0c1c1a,
-    waterLine: 0x8fd6c4,
-    waterLineA: 0.2,
-    structure: 0x4d5b55,
-    dark: 0x242d2a,
-    light: 0x98a8a1,
-    white: 0xe6ede9,
-    window: 0xdcefa6,
-    accent: 0xc3f25e,
-    signal: 0xff8a4c,
-    tree: 0x27573e,
-    trunk: 0x2b312d,
-    rock: 0x4c5450,
-    asphalt: 0x1b211f,
-    court: 0x8c8160,
-    roof: 0x8a4f3f,
-    pool: 0x2f9db0,
-    hemiSky: 0xcfe0d8,
-    hemiGround: 0x29332f,
-    hemi: 1.6,
-    sun: 1.9,
-    additive: true,
-    beamA: 0.3,
-    stars: 0.7,
-  },
-  light: {
-    zenith: 0xb9d0c5,
-    horizon: 0xf5f7f3,
-    sand: 0xe9e3cc,
-    low: 0xdde6d2,
-    high: 0xb6c9ab,
-    seabed: 0x93b3ad,
-    shore: 0xffffff,
-    contour: 0x2c6e12,
-    contourA: 0.2,
-    grid: 0x000000,
-    gridA: 0.05,
-    road: 0xfafbf8,
-    roadEdge: 0x8d9a8a,
-    site: 0xf0f3eb,
-    water: 0xa5c5c2,
-    waterLine: 0xffffff,
-    waterLineA: 0.55,
-    structure: 0xc6d0c1,
-    dark: 0x66746a,
-    light: 0xedf1e9,
-    white: 0xffffff,
-    window: 0x2f4a3c,
-    accent: 0x2c6e12,
-    signal: 0xd9541e,
-    tree: 0x5d9a62,
-    trunk: 0x7a6a55,
-    rock: 0xa9b2a7,
-    asphalt: 0x8a948b,
-    court: 0xe2cf9b,
-    roof: 0xc9765c,
-    pool: 0x4fb3c8,
-    hemiSky: 0xffffff,
-    hemiGround: 0xa5b3a3,
-    hemi: 2.0,
-    sun: 1.5,
-    additive: false,
-    beamA: 0.4,
-    stars: 0,
-  },
+export const PALETTE: Palette = {
+  zenith: 0x4f8fd8,
+  horizon: 0xd9e6e4,
+  sunGlow: 0xffe2a8,
+  sand: 0xe6cf98,
+  low: 0x9fae4e,
+  dry: 0xcdb365,
+  high: 0x5d7a35,
+  seabed: 0x2c7c84,
+  shore: 0xffffff,
+  road: 0xc79b66,
+  roadEdge: 0xa47448,
+  site: 0xd9c49b,
+  water: 0x3aa6b2,
+  waterLine: 0xffffff,
+  waterLineA: 0.55,
+  structure: 0xd9c7a4,
+  dark: 0x5b4434,
+  light: 0xf0e2c4,
+  white: 0xfff8ec,
+  skin: 0xf0c3a0,
+  navy: 0x1d2848,
+  blue: 0x2457c8,
+  orange: 0xf2661c,
+  window: 0x4d6a73,
+  accent: 0x7fb23a,
+  signal: 0xe0602c,
+  tree: 0x2f5a33,
+  trunk: 0x6e4a30,
+  rock: 0xc0643f,
+  asphalt: 0x8e6d4c,
+  court: 0xd99e62,
+  roof: 0xa6452f,
+  pool: 0x46b6c6,
+  hemiSky: 0xcfe4ff,
+  hemiGround: 0x8a6a44,
+  hemi: 1.15,
+  sunColor: 0xffefd2,
+  sun: 2.6,
+  fogNear: 160,
+  fogFar: 620,
+  additive: false,
+  beamA: 0.35,
+  stars: 0,
 };
 
 type ColorKey = {
@@ -137,60 +110,46 @@ type ColorKey = {
 }[keyof Palette];
 
 /** Shaded by the scene lights. */
-const LIT = ['structure', 'dark', 'light', 'white', 'signal', 'tree', 'trunk', 'rock', 'asphalt', 'court', 'roof'] as const;
-/** Drawn at full strength whatever the light: lamps, screens and markings. */
+const LIT = ['structure', 'dark', 'light', 'white', 'skin', 'navy', 'blue', 'orange', 'signal', 'tree', 'trunk', 'rock', 'asphalt', 'court', 'roof'] as const;
+/** Drawn at full strength whatever the light: lamps, glass and markings. */
 const GLOW = ['accent', 'window', 'pool'] as const;
 
 export type MatKey = (typeof LIT)[number] | (typeof GLOW)[number];
 
 const shared = new Map<MatKey, THREE.MeshLambertMaterial | THREE.MeshBasicMaterial>();
-const tints: { material: THREE.MeshBasicMaterial; key: ColorKey; beam: boolean }[] = [];
-const listeners: ((p: Palette) => void)[] = [];
-let current: Palette = PALETTES.dark;
+const current: Palette = PALETTE;
 
+/** How strong the grain is on each lit color: walls and rock the most, skin and leaves hardly. */
+const GRAIN: Partial<Record<MatKey, number>> = { structure: 0.13, light: 0.1, white: 0.08, rock: 0.18, trunk: 0.14, asphalt: 0.14, court: 0.1, roof: 0.12, dark: 0.1, tree: 0.08 };
+
+/**
+ * Shared material of a palette color. Lit ones are smooth shaded, so the look is soft rather than
+ * faceted, and most carry a light grain.
+ */
 export function mat(key: MatKey): THREE.Material {
   let material = shared.get(key);
   if (!material) {
-    material = (LIT as readonly string[]).includes(key)
-      ? new THREE.MeshLambertMaterial({ color: current[key], flatShading: true })
-      : new THREE.MeshBasicMaterial({ color: current[key] });
+    if ((LIT as readonly string[]).includes(key)) {
+      const lit = new THREE.MeshLambertMaterial({ color: current[key] });
+      material = GRAIN[key] ? addGrain(lit, 0.35, GRAIN[key]) : lit;
+    } else material = new THREE.MeshBasicMaterial({ color: current[key] });
     shared.set(key, material);
   }
   return material;
 }
 
-/**
- * A see-through material of its own in one of the palette colors. `beam` marks light effects,
- * which follow the palette's blending mode.
- */
-export function tint(key: ColorKey, opacity: number, beam = false): THREE.MeshBasicMaterial {
-  const material = new THREE.MeshBasicMaterial({
+/** A see-through material of its own in one of the palette colors. `beam` marks light effects. */
+export function tint(key: ColorKey, opacity: number, _beam = false): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
     color: current[key],
     transparent: true,
     opacity,
     depthWrite: false,
     side: THREE.DoubleSide,
-    blending: beam && current.additive ? THREE.AdditiveBlending : THREE.NormalBlending,
   });
-  tints.push({ material, key, beam });
-  return material;
 }
 
+/** Calls back with the palette. There is only one, so this happens once, right away. */
 export function onPalette(listener: (p: Palette) => void): void {
-  listeners.push(listener);
   listener(current);
-}
-
-export function applyPalette(name: ThemeName): Palette {
-  current = PALETTES[name];
-  shared.forEach((material, key) => material.color.set(current[key]));
-  for (const { material, key, beam } of tints) {
-    material.color.set(current[key]);
-    if (beam) {
-      material.blending = current.additive ? THREE.AdditiveBlending : THREE.NormalBlending;
-      material.needsUpdate = true;
-    }
-  }
-  listeners.forEach((listener) => listener(current));
-  return current;
 }

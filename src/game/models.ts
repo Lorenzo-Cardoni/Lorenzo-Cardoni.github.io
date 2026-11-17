@@ -3,8 +3,10 @@
 import * as THREE from 'three';
 import { Kit, part } from './kit';
 import { TAU, rng } from './layout';
-import { mat, onPalette, tint, type MatKey } from './palette';
-import { lettering, signTexture, toolTexture } from './signs';
+import { mat, tint, type MatKey } from './palette';
+import { addSway } from './look';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { signTexture, toolTexture } from './signs';
 import type { StationDef } from './stations';
 
 export interface Built {
@@ -24,7 +26,8 @@ export interface Built {
   vehicles?: { kind: VehicleKind; object: THREE.Object3D }[];
 }
 
-export type VehicleKind = 'drone' | 'car' | 'bike' | 'boat';
+/** Machines the ghost can possess. The motor and the camera stay where they are: possessing them spins the motor up, or pans the camera. */
+export type VehicleKind = 'drone' | 'car' | 'bike' | 'boat' | 'robot' | 'motor' | 'camera';
 
 const HALF = Math.PI / 2;
 
@@ -71,20 +74,159 @@ export function makeDrone(): DroneModel {
   return { group, rotors };
 }
 
-// ---------- Vehicles ----------
-// Each faces +z. The places use them as props, and the visitor can take them.
+// ---------- The ghost ----------
 
-/** The 1:10 autonomous car of the Bosch challenge, at a size that fits the island. */
-export function makeCar(): THREE.Group {
-  const car = part((c) => {
-    c.box('white', 1, 0.42, 1.9, 0, 0.2, 0);
-    c.box('dark', 0.82, 0.34, 0.9, 0, 0.62, -0.15);
-    c.box('accent', 0.2, 0.2, 0.2, 0, 0.96, 0.2);
-    for (const sx of [-1, 1]) {
-      c.box('accent', 0.2, 0.12, 0.05, sx * 0.3, 0.38, 0.96);
-      c.box('signal', 0.2, 0.1, 0.05, sx * 0.3, 0.4, -0.96);
-      for (const sz of [-1, 1]) c.rod('dark', 0.25, 0.2, sx * 0.55, 0.25, sz * 0.6, 'x', 10);
+/**
+ * The visitor: a small ghost about 1.5 units tall, facing +z. It walks, and possesses machines.
+ * Soft and almost see-through, with a wavy hem and small electric sparks crackling around it:
+ * `userData.update(t)` moves them.
+ */
+export function makeGhost(): THREE.Group {
+  // The body: a smooth dome flaring to the hem, turned on a lathe; the hem then waves.
+  const profile: THREE.Vector2[] = [];
+  for (let i = 0; i <= 12; i++) {
+    const a = (i / 12) * HALF;
+    profile.push(new THREE.Vector2(Math.sin(a) * 0.78 + 0.0001, 1.6 + Math.cos(a) * 0.78));
+  }
+  for (let i = 1; i <= 10; i++) {
+    const f = i / 10;
+    profile.push(new THREE.Vector2(0.78 + 0.2 * f * f, 1.6 - 1.45 * f));
+  }
+  const shape = new THREE.LatheGeometry(profile, 40);
+  const p = shape.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < p.count; i++) {
+    const y = p.getY(i);
+    if (y < 0.45) p.setY(i, y + Math.sin(Math.atan2(p.getZ(i), p.getX(i)) * 7) * 0.12 * (0.45 - y) / 0.3);
+  }
+  shape.computeVertexNormals();
+  const ghostMaterial = new THREE.MeshLambertMaterial({
+    color: 0xffffff,
+    emissive: 0xbfe6ff,
+    emissiveIntensity: 0.45,
+    transparent: true,
+    opacity: 0.42,
+    depthWrite: false,
+    side: THREE.DoubleSide,
+  });
+  const body = new THREE.Group();
+  const shell = new THREE.Mesh(shape, ghostMaterial);
+  shell.castShadow = false;
+  body.add(shell);
+  const eyes = part((g) => {
+    for (const sx of [-1, 1]) g.ball('dark', 0.11, sx * 0.27, 1.7, 0.7, 2);
+    g.ball('dark', 0.07, 0, 1.38, 0.76, 2);
+  });
+  body.add(eyes);
+  const glow = new THREE.Mesh(new THREE.CircleGeometry(0.9, 24), tint('accent', 0.22));
+  glow.rotation.x = -HALF;
+  glow.position.y = -0.3;
+  body.add(glow);
+
+  // Sparks: a few short zigzag arcs, redrawn at random a dozen times a second.
+  const ARCS = 3;
+  const STEPS = 6;
+  const sparkPositions = new Float32Array(ARCS * STEPS * 2 * 3);
+  const sparkGeometry = new THREE.BufferGeometry();
+  sparkGeometry.setAttribute('position', new THREE.BufferAttribute(sparkPositions, 3));
+  const sparks = new THREE.LineSegments(
+    sparkGeometry,
+    new THREE.LineBasicMaterial({ color: 0xa8ecff, transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false }),
+  );
+  sparks.frustumCulled = false;
+  body.add(sparks);
+  let next = 0;
+  const redraw = () => {
+    let k = 0;
+    for (let a = 0; a < ARCS; a++) {
+      const angle = Math.random() * TAU;
+      const r = 0.85 + Math.random() * 0.35;
+      let x = Math.cos(angle) * r;
+      let y = 0.3 + Math.random() * 1.9;
+      let z = Math.sin(angle) * r;
+      const dx = (Math.random() - 0.5) * 0.25;
+      const dy = (Math.random() - 0.5) * 0.35;
+      const dz = (Math.random() - 0.5) * 0.25;
+      for (let s = 0; s < STEPS; s++) {
+        const nx = x + dx + (Math.random() - 0.5) * 0.18;
+        const ny = y + dy + (Math.random() - 0.5) * 0.18;
+        const nz = z + dz + (Math.random() - 0.5) * 0.18;
+        sparkPositions.set([x, y, z, nx, ny, nz], k);
+        k += 6;
+        x = nx;
+        y = ny;
+        z = nz;
+      }
     }
+    sparkGeometry.attributes.position.needsUpdate = true;
+  };
+
+  // Small, so it does not hide the island.
+  body.scale.setScalar(0.65);
+  const holder = new THREE.Group();
+  holder.add(body);
+  holder.userData.update = (t: number) => {
+    if (t >= next) {
+      redraw();
+      next = t + 0.06 + Math.random() * 0.08;
+      sparks.visible = Math.random() > 0.3;
+    }
+    ghostMaterial.opacity = 0.38 + Math.sin(t * 2.2) * 0.06;
+  };
+  return holder;
+}
+
+/** A ring that grows and fades where the ghost goes into a machine or comes out of it. */
+export function makePoof(): THREE.Mesh {
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.8, 1, 32), tint('accent', 0.8));
+  ring.rotation.x = -HALF;
+  ring.visible = false;
+  return ring;
+}
+
+/** Points at the current objective: a big arrow, bobbing above it. */
+export function makeGuide(): THREE.Group {
+  const group = new THREE.Group();
+  const arrow = new THREE.Mesh(new THREE.ConeGeometry(1.3, 2.6, 4), mat('signal'));
+  arrow.rotation.x = Math.PI;
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.12, 6, 24), mat('signal'));
+  ring.rotation.x = HALF;
+  ring.position.y = 2;
+  group.add(arrow, ring);
+  group.visible = false;
+  return group;
+}
+
+// ---------- Vehicles ----------
+// Each faces +z. The places use them as props, and the ghost can possess them.
+
+/**
+ * The 1:10 autonomous car of the Bosch challenge, at a size that fits the island: an orange
+ * coupé with a black grille, dark windows, black wheels, and the challenge's white and red
+ * checks along the doors. `paint` gives the same car in another color (the police car).
+ */
+export function makeCar(paint: MatKey = 'orange'): THREE.Group {
+  const car = part((c) => {
+    c.box(paint, 1, 0.32, 2.1, 0, 0.16, 0);
+    c.put(paint, new THREE.BoxGeometry(0.96, 0.12, 0.66), 0, 0.5, 0.66, -0.12);
+    c.box(paint, 0.84, 0.3, 0.95, 0, 0.46, -0.2);
+    c.box('window', 0.86, 0.16, 0.74, 0, 0.55, -0.18);
+    c.box('dark', 0.56, 0.14, 0.04, 0, 0.2, 1.06);
+    for (const sx of [-1, 1]) {
+      c.box('white', 0.24, 0.07, 0.04, sx * 0.3, 0.34, 1.05);
+      c.box('signal', 0.22, 0.07, 0.04, sx * 0.3, 0.36, -1.05);
+      // The checks: two rows of small squares along the lower doors.
+      for (let i = 0; i < 6; i++) {
+        for (let row = 0; row < 2; row++) {
+          const key = (i + row) % 2 ? 'signal' : 'white';
+          c.box(key, 0.03, 0.09, 0.12, sx * 0.505, 0.14 + row * 0.09, -0.75 + i * 0.12);
+        }
+      }
+      for (const sz of [-1, 1]) {
+        c.rod('dark', 0.24, 0.2, sx * 0.52, 0.24, sz * 0.68, 'x', 14);
+        c.rod('dark', 0.15, 0.21, sx * 0.52, 0.24, sz * 0.68, 'x', 10);
+      }
+    }
+    c.box('dark', 0.9, 0.03, 0.16, 0, 0.62, -1.0);
   });
   car.scale.setScalar(1.25);
   const holder = new THREE.Group();
@@ -92,18 +234,45 @@ export function makeCar(): THREE.Group {
   return holder;
 }
 
-/** The self-driving e-bike: its electronics box sits behind the seat. */
+/**
+ * The self-driving e-bike: a small blue bike with no saddle, the steering motor on an aluminium
+ * bracket over the fork, and its electronics, boards and red wires, strapped to the frame.
+ */
 export function makeBike(): THREE.Group {
   const bike = part((b) => {
-    for (const z of [-0.75, 0.75]) b.torus('dark', 0.5, 0.07, 0, 0.5, z, true);
-    b.put('accent', new THREE.BoxGeometry(0.08, 0.08, 1.15), 0, 1.02, -0.05, -0.12);
-    b.put('accent', new THREE.BoxGeometry(0.08, 0.08, 0.95), 0, 0.72, 0.3, 0.75);
-    b.put('accent', new THREE.BoxGeometry(0.08, 0.08, 0.9), 0, 0.7, -0.42, -0.6);
-    b.put('accent', new THREE.BoxGeometry(0.07, 0.07, 0.85), 0, 0.82, 0.68, HALF - 0.25);
-    b.box('dark', 0.7, 0.06, 0.06, 0, 1.24, 0.6);
-    b.box('dark', 0.22, 0.08, 0.4, 0, 1.12, -0.52);
-    b.box('light', 0.36, 0.3, 0.5, 0, 0.72, -0.9);
-    b.box('accent', 0.1, 0.05, 0.1, 0, 1.02, -0.9);
+    for (const z of [-0.75, 0.75]) {
+      b.torus('dark', 0.5, 0.08, 0, 0.5, z, true);
+      b.put('light', new THREE.TorusGeometry(0.4, 0.03, 6, 24), 0, 0.5, z, 0, HALF, 0);
+      b.rod('light', 0.06, 0.16, 0, 0.5, z, 'x', 8);
+    }
+    // The frame: rear axle R, bottom bracket B, seat top S, head H (top) and Hb (bottom), front axle F.
+    const R: [number, number, number] = [0, 0.5, -0.75];
+    const B: [number, number, number] = [0, 0.4, -0.05];
+    const S: [number, number, number] = [0, 1.0, -0.32];
+    const H: [number, number, number] = [0, 1.12, 0.48];
+    const Hb: [number, number, number] = [0, 0.86, 0.56];
+    const F: [number, number, number] = [0, 0.5, 0.75];
+    for (const sx of [-0.06, 0.06]) {
+      b.link('blue', 0.035, R[0] + sx, R[1], R[2], B[0] + sx, B[1], B[2]);
+      b.link('blue', 0.03, R[0] + sx, R[1], R[2], S[0] + sx, S[1], S[2]);
+      b.link('blue', 0.04, Hb[0] + sx, Hb[1], Hb[2], F[0] + sx, F[1], F[2]);
+    }
+    b.link('blue', 0.05, ...B, ...S);
+    b.link('blue', 0.065, ...B, ...Hb);
+    b.link('blue', 0.045, ...S, ...H);
+    b.link('blue', 0.06, ...Hb, ...H);
+    b.box('dark', 0.62, 0.05, 0.05, 0, 1.2, 0.46);
+    // The steering motor on its aluminium bracket.
+    b.put('light', new THREE.BoxGeometry(0.1, 0.1, 0.5), 0, 1.24, 0.3, 0.5);
+    b.rod('light', 0.1, 0.55, 0, 1.4, 0.12, 'z', 12);
+    b.rod('dark', 0.105, 0.08, 0, 1.4, -0.18, 'z', 12);
+    // Electronics: a blue board on the side, a white plate of modules, red wires.
+    b.box('navy', 0.04, 0.36, 0.42, 0.09, 0.56, 0.18);
+    b.box('white', 0.04, 0.12, 0.42, 0.09, 0.86, -0.22);
+    for (const z of [-0.36, -0.22, -0.08]) b.box('dark', 0.06, 0.08, 0.08, 0.12, 0.88, z);
+    b.link('signal', 0.015, 0.1, 0.92, 0.0, 0.1, 0.7, 0.3);
+    b.link('signal', 0.015, 0.1, 0.62, 0.0, 0.08, 1.0, 0.4);
+    b.link('signal', 0.015, 0.08, 0.5, -0.1, 0.1, 0.84, -0.4);
   });
   bike.scale.setScalar(1.35);
   const holder = new THREE.Group();
@@ -121,6 +290,32 @@ export function makeBoat(): THREE.Group {
     b.cyl('light', 0.04, 0.04, 1.6, 0, 1.5, -0.8, 5);
     b.box('signal', 0.5, 0.34, 0.04, 0.27, 2.7, -0.8);
   });
+}
+
+/** The litter-collecting robot of the 2024 hackathon. Its head is `userData.head`. */
+export function makeRobot(): THREE.Group {
+  const body = part((b) => {
+    b.box('dark', 1.8, 0.5, 1.6, 0, 0.2, 0);
+    for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.rod('dark', 0.4, 0.26, sx * 1, 0.4, sz * 0.5, 'x', 10);
+    b.box('white', 1.5, 1.7, 1.2, 0, 0.7, 0);
+    b.box('accent', 0.7, 0.4, 0.05, 0, 1.55, 0.61);
+    b.box('structure', 1.1, 0.9, 0.5, 0, 0.8, -0.85);
+    b.put('light', new THREE.BoxGeometry(0.18, 0.18, 1.5), 0.86, 1.5, 0.75, 0.55);
+    b.box('dark', 0.34, 0.14, 0.3, 0.86, 0.98, 1.38);
+  });
+  const head = part((h) => {
+    h.box('white', 1.2, 0.8, 1, 0, 0, 0);
+    for (const sx of [-1, 1]) h.box('accent', 0.22, 0.22, 0.05, sx * 0.28, 0.36, 0.51);
+    h.cyl('light', 0.03, 0.03, 0.5, 0, 0.8, 0, 5);
+    h.ball('signal', 0.1, 0, 1.35, 0);
+  });
+  head.position.y = 2.5;
+  body.add(head);
+  body.scale.setScalar(0.9);
+  const holder = new THREE.Group();
+  holder.add(body);
+  holder.userData.head = head;
+  return holder;
 }
 
 // ---------- Places ----------
@@ -275,13 +470,9 @@ const BUILDERS: Record<string, Builder> = {
     const group = k.build();
 
     // Pairs walking the guide path: one guides, one follows a hand on the shoulder.
-    const person = part((p) => {
-      p.cyl('light', 0.22, 0.28, 1.05, 0, 0, 0, 8);
-      p.ball('light', 0.25, 0, 1.3, 0);
-    }).children[0] as THREE.Mesh;
     const pairs = [0, 0.5].map(() => {
-      const a = new THREE.Mesh(person.geometry, person.material);
-      const b = new THREE.Mesh(person.geometry, person.material);
+      const a = makePerson('structure');
+      const b = makePerson('white');
       group.add(a, b);
       return [a, b];
     });
@@ -293,6 +484,8 @@ const BUILDERS: Record<string, Builder> = {
           const angle = t * 0.16 + i * Math.PI;
           a.position.set(Math.cos(angle) * 4.3, 0.06, 2.4 + Math.sin(angle) * 4.3);
           b.position.set(Math.cos(angle - 0.2) * 4.3, 0.06, 2.4 + Math.sin(angle - 0.2) * 4.3);
+          // Facing the way they walk, round the loop.
+          a.rotation.y = b.rotation.y = -angle;
         }),
       solid: [
         [0, -7, 4.8, 3.4],
@@ -330,7 +523,20 @@ const BUILDERS: Record<string, Builder> = {
     });
     shaft.position.set(1.28, 1.3, 4.8);
     group.add(shaft);
-    return { group, h: 9.5, update: (t) => (shaft.rotation.x = t * 7), solid: [[0, -2.5, 7.2, 6.4]] };
+    // The motor on the test bench. Possessed, the game sets `userData.boost` (0 to 1) to spin it up.
+    let angle = 0;
+    let last = 0;
+    return {
+      group,
+      h: 9.5,
+      update: (t) => {
+        angle += (7 + (shaft.userData.boost ?? 0) * 55) * Math.max(0, t - last);
+        last = t;
+        shaft.rotation.x = angle;
+      },
+      solid: [[0, -2.5, 7.2, 6.4]],
+      vehicles: [{ kind: 'motor', object: shaft }],
+    };
   },
 
   // University laboratory: a workshop and the pool the underwater prototype was tested in.
@@ -500,30 +706,6 @@ const BUILDERS: Record<string, Builder> = {
     };
   },
 
-  // Publication: a page of the paper, standing.
-  paper: () => {
-    const k = new Kit();
-    k.box('dark', 3.8, 0.9, 2.2, 0, 0, 0);
-    k.box('accent', 3.8, 0.08, 0.08, 0, 0.82, 1.12);
-    const group = k.build();
-    const sheet = part((s) => {
-      s.box('white', 4.2, 5.6, 0.22, 0, 0, 0);
-      s.box('accent', 2.6, 0.32, 0.06, -0.5, 4.6, 0.12);
-      for (let i = 0; i < 7; i++) {
-        const short = i % 3 === 2;
-        s.box('structure', short ? 2.2 : 3.4, 0.14, 0.06, short ? -0.6 : 0, 3.95 - i * 0.4, 0.12);
-      }
-      [0.6, 1.0, 0.8, 1.3].forEach((h, j) => s.box('accent', 0.34, h, 0.06, -1.5 + j * 0.5, 0.4, 0.12));
-      s.box('structure', 1.3, 0.14, 0.06, 1.05, 1.3, 0.12);
-      s.box('structure', 1.3, 0.14, 0.06, 1.05, 0.9, 0.12);
-      s.box('structure', 0.9, 0.14, 0.06, 0.85, 0.5, 0.12);
-    });
-    sheet.position.y = 0.9;
-    sheet.rotation.x = -0.12;
-    group.add(sheet);
-    return { group, h: 6.8, solid: [[0, -0.3, 2.6, 6.4]] };
-  },
-
   // Bosch Future Mobility Challenge: a scale car that drives its circuit alone.
   circuit: () => {
     const k = new Kit();
@@ -572,34 +754,19 @@ const BUILDERS: Record<string, Builder> = {
     k.cyl('structure', 0.75, 0.62, 1.4, 3.6, 0, 1.6, 10);
     k.torus('accent', 0.74, 0.07, 3.6, 1, 1.6);
     const group = k.build();
-    const body = part((b) => {
-      b.box('dark', 1.8, 0.5, 1.6, 0, 0.2, 0);
-      for (const sx of [-1, 1]) for (const sz of [-1, 1]) b.rod('dark', 0.4, 0.26, sx * 1, 0.4, sz * 0.5, 'x', 10);
-      b.box('white', 1.5, 1.7, 1.2, 0, 0.7, 0);
-      b.box('accent', 0.7, 0.4, 0.05, 0, 1.55, 0.61);
-      b.box('structure', 1.1, 0.9, 0.5, 0, 0.8, -0.85);
-      b.put('light', new THREE.BoxGeometry(0.18, 0.18, 1.5), 0.86, 1.5, 0.75, 0.55);
-      b.box('dark', 0.34, 0.14, 0.3, 0.86, 0.98, 1.38);
-    });
-    const head = part((h) => {
-      h.box('white', 1.2, 0.8, 1, 0, 0, 0);
-      for (const sx of [-1, 1]) h.box('accent', 0.22, 0.22, 0.05, sx * 0.28, 0.36, 0.51);
-      h.cyl('light', 0.03, 0.03, 0.5, 0, 0.8, 0, 5);
-      h.ball('signal', 0.1, 0, 1.35, 0);
-    });
-    head.position.y = 2.5;
-    body.add(head);
-    body.scale.setScalar(1.5);
-    group.add(body);
+    const robot = makeRobot();
+    robot.rotation.order = 'YXZ';
+    const head = robot.userData.head as THREE.Object3D;
+    group.add(robot);
     return {
       group,
-      h: 5.8,
+      h: 3.6,
       update: (t) => {
         head.rotation.y = Math.sin(t * 0.9) * 0.7;
-        body.position.y = Math.abs(Math.sin(t * 2.4)) * 0.06;
-        body.rotation.y = Math.sin(t * 0.3) * 0.5;
+        robot.position.y = Math.abs(Math.sin(t * 2.4)) * 0.05;
+        robot.rotation.y = Math.sin(t * 0.3) * 0.5;
       },
-      solid: [[0, 0, 2, 5]],
+      vehicles: [{ kind: 'robot', object: robot }],
     };
   },
 
@@ -615,13 +782,11 @@ const BUILDERS: Record<string, Builder> = {
     k.box('accent', 0.08, 0.6, 6.4, 0, 0, 4.3);
     for (const z of [1.2, 4.3, 7.4]) k.cyl('light', 0.09, 0.09, 0.9, 0, 0, z, 6);
     const group = k.build();
-    const person = part((p) => {
-      p.cyl('light', 0.24, 0.3, 1.1, 0, 0, 0, 8);
-      p.ball('light', 0.27, 0, 1.36, 0);
-    });
-    const figure = person.children[0] as THREE.Mesh;
-    const crowd = Array.from({ length: 12 }, () => {
-      const one = new THREE.Mesh(figure.geometry, figure.material);
+    const shirts = ['signal', 'white', 'structure', 'court'] as const;
+    const crowd = Array.from({ length: 12 }, (_, i) => {
+      const one = makePerson(shirts[i % shirts.length]);
+      // One lane walks away from the stage, the other toward it.
+      one.rotation.y = i % 2 ? Math.PI : 0;
       group.add(one);
       return one;
     });
@@ -675,6 +840,7 @@ const BUILDERS: Record<string, Builder> = {
         test.rotors.forEach((rotor, i) => (rotor.rotation.y = t * (i % 2 ? 33 : -33) * (fault && i === 0 ? 0.3 : 1)));
       },
       solid: [[-4.6, -3, 5.8, 5.4]],
+      vehicles: [{ kind: 'drone', object: test.group }],
     };
   },
 
@@ -739,7 +905,8 @@ const BUILDERS: Record<string, Builder> = {
       return { buoy, ripple };
     });
     const boat = makeBoat();
-    boat.position.set(-6.2, 0, -3.2);
+    // Toward the island, so the ghost can reach it from the shore.
+    boat.position.set(-4.4, 0, 6.8);
     boat.rotation.order = 'YXZ';
     group.add(boat);
     return {
@@ -783,9 +950,8 @@ const BUILDERS: Record<string, Builder> = {
       [3.3, -1.8],
       [6.7, -1.2],
     ].forEach(([x, z]) => {
-      const key = x < 0 ? 'light' : 'structure';
-      k.cyl(key, 0.3, 0.34, 1.35, x, 0.12, z, 8);
-      k.ball(key, 0.3, x, 1.78, z);
+      // Each side faces the net.
+      person(k, x < 0 ? 'white' : 'structure', 'dark', x, z, x < 0 ? Math.PI / 2 : -Math.PI / 2);
     });
     const group = k.build();
     const ball = part((b) => b.ball('white', 0.34, 0, 0, 0));
@@ -839,25 +1005,33 @@ const BUILDERS: Record<string, Builder> = {
   pylons: (def) => {
     const k = new Kit();
     const groups = def.icons?.length ? def.icons : def.extra.map((n) => Array.from({ length: n }, () => null));
-    const gap = Math.min(5.6, 17 / Math.max(groups.length - 1, 1));
     const STEP = 1.4;
+    // The masts stand in a ring, open toward the front, around the statue of the AI engineer.
+    const RING = 7;
     const masts = groups.map((tools, i) => {
-      const x = (i - (groups.length - 1) / 2) * gap;
+      const a = ((i + 0.5) / groups.length - 0.5) * Math.PI * 1.5;
+      const x = Math.sin(a) * RING;
+      const z = -Math.cos(a) * RING;
       const top = 2.4 + tools.length * STEP;
-      k.cyl('dark', 0.85, 1, 0.4, x, 0, 0, 8);
-      k.cyl('light', 0.1, 0.22, top, x, 0.4, 0, 6);
-      k.ball('accent', 0.24, x, top + 0.55, 0);
-      return { x, top, tools };
+      k.cyl('dark', 0.85, 1, 0.4, x, 0, z, 8);
+      k.cyl('light', 0.1, 0.22, top, x, 0.4, z, 6);
+      k.ball('accent', 0.24, x, top + 0.55, z);
+      return { x, z, top, tools };
     });
-    k.box('structure', 3, 0.9, 1, 0, 0, 4.6);
-    k.put('window', new THREE.BoxGeometry(2.6, 0.06, 0.8), 0, 1.05, 4.6, 0.35);
+    // The statue: a person like every other on the island, large, in white, one arm up.
+    k.box('light', 2.6, 1.4, 2.6, 0, 0, 0);
+    k.box('accent', 2.7, 0.12, 2.7, 0, 1.4, 0);
     const group = k.build();
+    const statue = part((st) => person(st, 'white', 'white', 0, 0, 0, 'raise', 'white'));
+    statue.scale.setScalar(2.4);
+    statue.position.y = 1.52;
+    group.add(statue);
 
     const tile = new THREE.PlaneGeometry(1.35, 1.35);
     const back = new THREE.BoxGeometry(1.44, 1.44, 0.06);
-    const spinners = masts.map(({ x, tools }) => {
+    const spinners = masts.map(({ x, z, tools }) => {
       const spinner = new THREE.Group();
-      spinner.position.x = x;
+      spinner.position.set(x, 0, z);
       tools.forEach((tool, j) => {
         const holder = new THREE.Group();
         holder.rotation.y = j * 2.2;
@@ -874,82 +1048,25 @@ const BUILDERS: Record<string, Builder> = {
       group.add(spinner);
       return spinner;
     });
-    const scans = masts.map(({ x }) => {
+    const scans = masts.map(({ x, z }) => {
       const scan = part((sc) => sc.torus('accent', 1.15, 0.05, 0, 0, 0));
-      scan.position.x = x;
+      scan.position.set(x, 0, z);
       group.add(scan);
       return scan;
     });
     return {
       group,
-      h: Math.max(...masts.map((m) => m.top)) + 1.2,
+      h: Math.max(6.4, ...masts.map((m) => m.top)) + 1.2,
       update: (t) => {
         spinners.forEach((spinner, i) => (spinner.rotation.y = t * 0.25 * (i % 2 ? 1 : -1)));
         scans.forEach((scan, i) => (scan.position.y = 1.3 + (0.5 + 0.5 * Math.sin(t * 0.8 + i * 1.4)) * (masts[i].top - 1.3)));
       },
-      solid: masts.map(({ x, top }) => [x, 0, 1.3, top + 0.8] as [number, number, number, number]),
+      solid: [...masts.map(({ x, z, top }) => [x, z, 1.3, top + 0.8] as [number, number, number, number]), [0, 0, 1.9, 6.4]],
     };
   },
 
   // Data science hall: a temple with an open colonnade at both ends, the avenue running through
   // its aisle, and the course projects on plinths inside (they are places of their own).
-  museum: () => {
-    const k = new Kit();
-    const HW = 9;
-    const HL = 15;
-    const CEIL = 7;
-    k.box('light', HW * 2 + 1, 0.04, HL * 2 + 1, 0, 0, 0);
-    k.box('asphalt', 3.3, 0.02, HL * 2 + 1, 0, 0.04, 0);
-    for (const sx of [-1, 1]) k.box('accent', 0.12, 0.02, HL * 2 - 2, sx * 2.3, 0.04, 0);
-
-    const columns: [number, number][] = [];
-    for (let z = -13.5; z <= 13.5; z += 3) for (const sx of [-1, 1]) columns.push([sx * 8.4, z]);
-    for (const x of [-8.4, -5.6, 5.6, 8.4]) for (const sz of [-1, 1]) columns.push([x, sz * 14.4]);
-    for (const [x, z] of columns) {
-      k.box('white', 1.1, 0.3, 1.1, x, 0.04, z);
-      k.cyl('white', 0.36, 0.44, CEIL - 0.6, x, 0.34, z, 10);
-      k.box('white', 1.1, 0.3, 1.1, x, CEIL - 0.3, z);
-    }
-    // Inner walls with screens facing the aisle.
-    for (const sx of [-1, 1]) {
-      k.box('light', 0.5, CEIL, 22, sx * 6.6, 0, 0);
-      // Screens with a small bar chart, facing the aisle.
-      for (const z of [-6.5, 0, 6.5]) {
-        k.box('dark', 0.1, 2.2, 3.4, sx * 6.3, 2.2, z);
-        [0.5, 0.9, 0.7, 1.4, 1.1].forEach((h, j) => k.box('accent', 0.04, h, 0.42, sx * 6.24, 2.5, z - 1.1 + j * 0.55));
-      }
-      k.box('accent', 0.25, 0.06, 26, sx * 3, CEIL - 0.04, 0);
-    }
-    k.box('white', HW * 2 + 1, 1.1, HL * 2 + 1.4, 0, CEIL, 0);
-    k.box('accent', HW * 2 + 1.04, 0.14, HL * 2 + 1.44, 0, CEIL + 0.5, 0);
-    const roof = new THREE.CylinderGeometry(1, 1, 1, 3).rotateX(-HALF);
-    k.put('structure', roof, 0, CEIL + 1.1 + 1.6, 0, 0, 0, 0, (HW * 2 + 1.6) / 1.732, 3.2 / 1.5, HL * 2 + 1.8);
-    const group = k.build();
-
-    let accentHex = 0xc3f25e;
-    const words = lettering('DATA SCIENCE', () => '#' + accentHex.toString(16).padStart(6, '0'));
-    onPalette((p) => {
-      accentHex = p.accent;
-      words.redraw();
-    });
-    const sign = new THREE.MeshBasicMaterial({ map: words.map, transparent: true, depthWrite: false });
-    for (const end of [1, -1]) {
-      const plane = new THREE.Mesh(new THREE.PlaneGeometry(9, 1.4), sign);
-      plane.position.set(0, CEIL + 2.05, end * (HL + 0.95));
-      plane.rotation.y = end > 0 ? 0 : Math.PI;
-      group.add(plane);
-    }
-
-    const solid: [number, number, number, number][] = columns.map(([x, z]) => [x, z, 0.6, CEIL + 4.3]);
-    for (const sx of [-1, 1]) for (let z = -11; z <= 11; z += 1.2) solid.push([sx * 6.6, z, 0.65, CEIL + 4.3]);
-    return {
-      group,
-      h: CEIL + 4.3,
-      solid,
-      roofs: [[0, 0, HW + 0.8, HL + 0.9, CEIL, CEIL + 4.3]],
-    };
-  },
-
   // Contact: the lighthouse at the southern tip.
   lighthouse: () => {
     const k = new Kit();
@@ -1102,6 +1219,361 @@ function addSign(built: Built, def: StationDef) {
   built.solid = [...(built.solid ?? []), [x, z, 1.6, 4.4]];
 }
 
+// ---------- Obstacles ----------
+// Each faces +z, the way across.
+
+/** Striped posts and a sign at the foot of the ramp to the plateau: too steep to walk up. */
+export function makeRampMarks(): THREE.Group {
+  const k = new Kit();
+  for (const sx of [-1, 1]) {
+    k.cyl('dark', 0.16, 0.18, 2.2, sx * 4, 0, 0, 8);
+    for (let i = 0; i < 3; i++) k.cyl('signal', 0.19, 0.19, 0.3, sx * 4, 0.4 + i * 0.6, 0, 8);
+  }
+  // A sign showing a slope with a bike on it.
+  k.box('dark', 0.12, 2.6, 0.12, -5.6, 0, 0.4);
+  k.put('white', new THREE.CylinderGeometry(1, 1, 0.08, 3), -5.6, 3, 0.4, HALF, 0, 0, 1.05, 1, 1.05);
+  k.put('signal', new THREE.CylinderGeometry(1, 1, 0.1, 3), -5.6, 3, 0.4, HALF, 0, 0, 0.85, 1, 0.85);
+  k.put('white', new THREE.BoxGeometry(1.1, 0.12, 0.12), -5.6, 2.8, 0.47, 0, 0, 0.45);
+  for (const dx of [-0.32, 0.32]) k.put('dark', new THREE.TorusGeometry(0.15, 0.03, 6, 14), -5.6 + dx, 3.05 + dx * 0.4, 0.48);
+  return k.build();
+}
+
+/** The jump on the bank of the river: a ramp the car takes at speed, and the bridge that is gone. */
+export function makeJump(gap: number): THREE.Group {
+  const k = new Kit();
+  const wedge = new THREE.BufferGeometry();
+  // A wedge 6 wide, rising from 0 at z = -5 to 1.6 at z = 0.
+  const v = [
+    [-3, 0, -5],
+    [3, 0, -5],
+    [3, 0, 0],
+    [-3, 0, 0],
+    [-3, 1.6, 0],
+    [3, 1.6, 0],
+  ];
+  const tri = [0, 1, 2, 0, 2, 3, 0, 4, 5, 0, 5, 1, 3, 2, 5, 3, 5, 4, 0, 3, 4, 1, 5, 2];
+  wedge.setAttribute('position', new THREE.Float32BufferAttribute(tri.flatMap((i) => v[i]), 3));
+  wedge.computeVertexNormals();
+  k.put('structure', wedge);
+  for (let i = 0; i < 4; i++) k.put('accent', new THREE.BoxGeometry(5.6, 0.04, 0.3), 0, 0.33 + i * 0.4, -3.9 + i * 1.25, -Math.atan2(1.6, 5));
+  // What is left of the bridge: two stubs of the deck on piers.
+  for (const z of [1.2, gap - 1.2]) {
+    k.box('light', 6.4, 0.4, 2.4, 0, -0.4, z);
+    for (const sx of [-2.6, 2.6]) k.box('dark', 0.5, 4, 0.5, sx, -4.4, z);
+  }
+  return k.build();
+}
+
+/** A pile of litter that blocks the gorge; the litter robot clears it. */
+export function makeLitter(seed: number): THREE.Group {
+  const k = new Kit();
+  const random = rng(seed);
+  for (let i = 0; i < 9; i++) {
+    const a = random() * TAU;
+    const d = random() * 1.6;
+    const s = 0.5 + random() * 0.7;
+    const key = (['light', 'signal', 'dark', 'structure'] as const)[i % 4];
+    if (i % 3 === 0) k.ball(key, s * 0.6, Math.cos(a) * d, s * 0.5, Math.sin(a) * d, 0);
+    else k.put(key, new THREE.BoxGeometry(s, s * 0.8, s * 1.2), Math.cos(a) * d, s * 0.4 + random() * 0.6, Math.sin(a) * d, random(), random() * 3, random());
+  }
+  k.cyl('dark', 0.5, 0.42, 1.3, 0.9, 0, -0.7, 10);
+  k.torus('accent', 0.48, 0.05, 0.9, 1.2, -0.7);
+  return k.build();
+}
+
+/**
+ * A person about 1.9 units tall, facing +z (turned by `ry`), in the colors given. Every person on
+ * the island has this shape: crowds, players, the statue. `pose` raises the right arm, or holds it
+ * out in front (only for a person standing unturned).
+ */
+export type Pose = 'rest' | 'raise' | 'aim';
+function person(k: Kit, body: MatKey, legs: MatKey, x = 0, z = 0, ry = 0, pose: Pose = 'rest', skin: MatKey = 'skin') {
+  const c = Math.cos(ry);
+  const n = Math.sin(ry);
+  const at = (lx: number, lz: number): [number, number] => [x + lx * c + lz * n, z - lx * n + lz * c];
+  // Short legs, a round body, a big round head: a chubby, toy-like figure.
+  for (const sx of [-0.15, 0.15]) {
+    const [px, pz] = at(sx, 0);
+    k.cyl(legs, 0.13, 0.15, 0.55, px, 0, pz, 10);
+    k.ball('dark', 0.15, ...pick(at(sx, 0.06), 0.06), 1);
+  }
+  k.put(body, new THREE.IcosahedronGeometry(1, 2), x, 0.9, z, 0, ry, 0, 0.46, 0.52, 0.4);
+  const arm = (side: number) => {
+    const [px, pz] = at(side * 0.48, 0);
+    k.cyl(body, 0.1, 0.12, 0.56, px, 0.66, pz, 8);
+    k.ball(skin, 0.11, px, 0.62, pz);
+  };
+  arm(-1);
+  if (pose === 'raise') {
+    k.cyl(body, 0.12, 0.1, 0.6, x + 0.46, 1.12, z, 8);
+    k.ball(skin, 0.11, x + 0.46, 1.8, z);
+  } else if (pose === 'aim') {
+    k.rod(body, 0.11, 0.56, x + 0.4, 1.12, z + 0.3, 'z', 8);
+    k.ball(skin, 0.11, x + 0.4, 1.12, z + 0.6);
+  } else arm(1);
+  k.ball(skin, 0.34, x, 1.62, z);
+}
+/** x, y, z for Kit.box from a plan position and a height. */
+const pick = ([px, pz]: [number, number], y: number): [number, number, number] => [px, y, pz];
+
+/** One person as a group of its own, for the ones that move. */
+export function makePerson(body: MatKey, legs: MatKey = 'dark', pose: Pose = 'rest'): THREE.Group {
+  return part((k) => person(k, body, legs, 0, 0, 0, pose));
+}
+
+/** The size of the people standing out in the world, matching the ones inside the places. */
+const PEOPLE_SCALE = 1.6;
+
+/** A tourist of the crowd on the plateau: a shirt, sometimes a hat or a camera held up. */
+export function makeTourist(seed: number): THREE.Group {
+  const random = rng(seed);
+  const shirt = (['signal', 'accent', 'white', 'structure', 'court'] as const)[Math.floor(random() * 5)];
+  const group = part((k) => {
+    person(k, shirt, 'dark');
+    if (random() > 0.5) {
+      k.cyl(random() > 0.5 ? 'white' : 'signal', 0.42, 0.42, 0.05, 0, 1.86, 0, 16);
+      k.cyl('white', 0.26, 0.3, 0.2, 0, 1.88, 0, 12);
+    }
+  });
+  group.scale.setScalar(PEOPLE_SCALE);
+  return group;
+}
+
+/**
+ * The armed man between valley and yard, among the passers-by. His gun is a mesh of its own, with a
+ * glowing halo the game shows through the security camera. `flash` is the muzzle flash.
+ */
+export function makeShooter(): { group: THREE.Group; gun: THREE.Object3D; halo: THREE.Object3D; flash: THREE.Object3D } {
+  const group = part((k) => {
+    person(k, 'dark', 'dark', 0, 0, 0, 'aim');
+    k.cyl('dark', 0.3, 0.36, 0.16, 0, 1.86, 0, 14);
+    k.box('dark', 0.5, 0.04, 0.3, 0, 1.86, 0.3);
+  });
+  const gun = part((k) => {
+    k.box('dark', 0.12, 0.12, 0.8, 0, 0, 0.25);
+    k.box('structure', 0.14, 0.2, 0.14, 0, -0.13, 0);
+  });
+  gun.position.set(0.4, 1.18, 0.42);
+  const halo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 1), tint('accent', 0.45, true));
+  halo.position.set(0, 0, 0.25);
+  halo.visible = false;
+  gun.add(halo);
+  const flash = new THREE.Mesh(new THREE.IcosahedronGeometry(0.35, 0), mat('signal'));
+  flash.position.set(0, 0, 0.75);
+  flash.visible = false;
+  gun.add(flash);
+  group.add(gun);
+  group.scale.setScalar(PEOPLE_SCALE);
+  return { group, gun, halo, flash };
+}
+
+/**
+ * The player in the middle of the volleyball court who keeps spiking the ball at the visitor.
+ * Through the court's camera his ball glows (`halo`). `ball` is the one he throws.
+ */
+export function makeHitter(): { group: THREE.Group; halo: THREE.Object3D; ball: THREE.Object3D } {
+  const group = part((k) => {
+    person(k, 'signal', 'dark', 0, 0, 0, 'raise');
+    k.box('white', 0.26, 0.26, 0.04, 0, 0.95, 0.42);
+    k.ball('white', 0.22, 0.46, 2.02, 0);
+  });
+  const halo = new THREE.Mesh(new THREE.IcosahedronGeometry(0.7, 1), tint('accent', 0.45, true));
+  halo.position.set(0.46, 2.02, 0);
+  halo.visible = false;
+  group.add(halo);
+  group.scale.setScalar(PEOPLE_SCALE);
+  const ball = new THREE.Mesh(new THREE.IcosahedronGeometry(0.45, 1), mat('white'));
+  ball.visible = false;
+  return { group, halo, ball };
+}
+
+/** A passer-by milling around the road at the checkpoint. */
+export function makePasserby(seed: number): THREE.Group {
+  const random = rng(seed * 13 + 5);
+  const coat = (['structure', 'light', 'court', 'roof', 'white'] as const)[Math.floor(random() * 5)];
+  const group = part((k) => {
+    person(k, coat, random() > 0.5 ? 'dark' : 'structure');
+    if (random() > 0.6) k.box('trunk', 0.3, 0.4, 0.14, 0.62, 0.45, 0);
+  });
+  group.scale.setScalar(PEOPLE_SCALE);
+  return group;
+}
+
+/** The barrier across the road at the checkpoint, hinged at its left end (+x is along the arm). */
+export function makeBarrier(): { group: THREE.Group; arm: THREE.Object3D } {
+  const group = part((k) => k.box('dark', 0.3, 1.1, 0.3, 0, 0, 0));
+  const arm = part((k) => {
+    k.box('white', 7, 0.2, 0.2, 3.5, -0.1, 0);
+    for (let i = 0; i < 4; i++) k.box('signal', 0.7, 0.22, 0.22, 1 + i * 1.6, -0.1, 0);
+  });
+  arm.position.y = 1.1;
+  group.add(arm);
+  return { group, arm };
+}
+
+/** The police car that takes the armed man away: the Bosch car's shape, with a light bar. */
+export function makePoliceCar(): { group: THREE.Group; lights: THREE.Object3D[] } {
+  const group = makeCar('navy');
+  const lights = (['signal', 'pool'] as const).map((key, i) => {
+    const light = part((k) => k.box(key, 0.36, 0.16, 0.24, 0, 0, 0));
+    light.position.set(i ? 0.25 : -0.25, 1.32, -0.15);
+    group.add(light);
+    return light;
+  });
+  group.add(part((k) => k.box('dark', 0.8, 0.06, 0.3, 0, 1.22, -0.15)));
+  return { group, lights };
+}
+
+/** A security camera on a pole; `head` is the part that pans, and the one the ghost possesses. */
+export function makeCameraPost(): { group: THREE.Group; head: THREE.Group } {
+  const group = part((k) => {
+    k.cyl('light', 0.1, 0.14, 5.6, 0, 0, 0, 8);
+    k.box('dark', 0.6, 0.9, 0.3, 0, 1.2, 0.12);
+    k.box('accent', 0.2, 0.06, 0.04, 0, 1.5, 0.28);
+  });
+  const head = cameraHead();
+  head.position.y = 5.75;
+  head.rotation.x = 0.18;
+  group.add(head);
+  return { group, head };
+}
+
+/**
+ * A giant carnivorous plant: a stem, leaves at its foot and a head of two jaws with teeth. The
+ * upper jaw (`userData.jaw`) opens by turning on its hinge at the back. Faces +z.
+ */
+export function makeFlytrap(): THREE.Group {
+  const group = part((k) => {
+    k.cyl('tree', 0.28, 0.4, 3, 0, 0, 0, 10);
+    for (let i = 0; i < 5; i++) {
+      const a = (i / 5) * TAU;
+      k.put('tree', new THREE.IcosahedronGeometry(1, 2), Math.cos(a) * 1.1, 0.2, Math.sin(a) * 1.1, 0, -a, 0.3, 1.2, 0.18, 0.5);
+    }
+  });
+  const inside = new THREE.MeshLambertMaterial({ color: 0xc8334a, side: THREE.BackSide });
+  const outside = new THREE.MeshLambertMaterial({ color: 0x6f9a35 });
+  const shell = (top: boolean) => {
+    const half = new THREE.Group();
+    const geometry = new THREE.SphereGeometry(1.5, 20, 10, 0, TAU, top ? 0 : HALF, HALF);
+    half.add(new THREE.Mesh(geometry, outside), new THREE.Mesh(geometry, inside));
+    const teeth = part((k) => {
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * TAU;
+        k.put('white', new THREE.ConeGeometry(0.1, 0.42, 5), Math.cos(a) * 1.45, top ? -0.18 : 0.18, Math.sin(a) * 1.45, top ? Math.PI : 0);
+      }
+    });
+    half.add(teeth);
+    return half;
+  };
+  const head = new THREE.Group();
+  head.position.y = 3.6;
+  const lower = shell(false);
+  // The upper jaw hinges at the back of the head.
+  const hinge = new THREE.Group();
+  hinge.position.z = -1.5;
+  const upper = shell(true);
+  upper.position.z = 1.5;
+  hinge.add(upper);
+  head.add(lower, hinge);
+  group.add(head);
+  group.userData.jaw = hinge;
+  group.userData.head = head;
+  return group;
+}
+
+/** The secret: a crate of explosives in a ring of boulders, half hidden by bushes. */
+export function makeStash(): THREE.Group {
+  return part((k) => {
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * TAU + 0.3;
+      if (i === 4) continue; // the way in
+      k.ball('rock', 1.1 + (i % 3) * 0.35, Math.cos(a) * 3, 0.5, Math.sin(a) * 3);
+    }
+    k.box('trunk', 1.2, 0.8, 0.8, 0, 0, 0);
+    for (const x of [-0.25, 0, 0.25]) k.rod('signal', 0.11, 0.9, x, 0.93, 0, 'z', 10);
+    for (const [x, z, r] of [
+      [-2.6, 2.4, 1.2],
+      [2.8, -2.2, 1.1],
+      [-2.2, -2.8, 0.9],
+    ]) k.ball('tree', r, x, r * 0.6, z);
+  });
+}
+
+/** A charge of explosives, as dropped: red sticks taped together and a blinking light (`userData.light`). */
+export function makeCharge(): THREE.Group {
+  const group = part((k) => {
+    for (const x of [-0.22, 0, 0.22]) k.rod('signal', 0.12, 0.8, x, 0.13, 0, 'z', 10);
+    k.box('dark', 0.75, 0.08, 0.14, 0, 0.1, 0);
+  });
+  const light = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 1), new THREE.MeshBasicMaterial({ color: 0xff2a10 }));
+  light.position.set(0, 0.32, 0);
+  group.add(light);
+  group.userData.light = light;
+  group.scale.setScalar(1.6);
+  return group;
+}
+
+/** A packet of data to gather, for the Lega del Filo d'Oro pipeline: a glowing cube. */
+export function makeDataCube(): THREE.Group {
+  return part((k) => {
+    k.box('pool', 0.9, 0.9, 0.9, 0, -0.45, 0);
+    k.box('white', 0.94, 0.08, 0.94, 0, 0.1, 0);
+  });
+}
+
+/** The dashboard the pipeline feeds: a screen of bars on two legs, shown once it is complete. */
+export function makeDashboard(): THREE.Group {
+  return part((k) => {
+    for (const x of [-1.6, 1.6]) k.box('dark', 0.16, 2.2, 0.16, x, 0, 0);
+    k.box('dark', 3.8, 2.2, 0.16, 0, 2.2, 0);
+    k.box('window', 3.5, 1.9, 0.04, 0, 2.35, 0.09);
+    [0.6, 1.1, 0.8, 1.5, 1.2, 1.7].forEach((h, i) => k.box('accent', 0.4, h, 0.04, -1.3 + i * 0.52, 2.5, 0.13));
+  });
+}
+
+/** An Inim sensor on a post; its light (`userData.led`) turns from red to green once activated. */
+export function makeSensor(): THREE.Group {
+  const group = part((k) => {
+    k.cyl('light', 0.08, 0.1, 1.8, 0, 0, 0, 8);
+    k.box('white', 0.42, 0.42, 0.3, 0, 1.8, 0);
+  });
+  const led = new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 1), new THREE.MeshBasicMaterial({ color: 0xff3020 }));
+  led.position.set(0, 2.05, 0.17);
+  group.add(led);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(1.8, 0.07, 6, 32), new THREE.MeshBasicMaterial({ color: 0xff3020, transparent: true, opacity: 0.6 }));
+  ring.rotation.x = HALF;
+  ring.position.y = 0.15;
+  group.add(ring);
+  group.userData.led = led;
+  group.userData.ring = ring;
+  return group;
+}
+
+/** Inim's control panel: a keypad on a stand, with a status light (`userData.led`). */
+export function makePanel(): THREE.Group {
+  const group = part((k) => {
+    k.box('dark', 0.2, 1.2, 0.2, 0, 0, 0);
+    k.box('white', 1.0, 0.8, 0.2, 0, 1.2, 0);
+    k.box('window', 0.7, 0.24, 0.04, 0, 1.68, 0.11);
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) k.box('light', 0.14, 0.1, 0.04, -0.2 + c * 0.2, 1.28 + r * 0.13, 0.11);
+  });
+  const led = new THREE.Mesh(new THREE.IcosahedronGeometry(0.1, 1), new THREE.MeshBasicMaterial({ color: 0xff3020 }));
+  led.position.set(0.38, 1.85, 0.12);
+  group.add(led);
+  group.userData.led = led;
+  return group;
+}
+
+/** A wooden landing: the boat brings the ghost here. Runs toward +z, out to sea. */
+export function makePier(length: number): THREE.Group {
+  const k = new Kit();
+  k.box('trunk', 3.2, 0.3, length, 0, 0.6, length / 2);
+  for (let z = 1; z < length; z += 4) for (const sx of [-1.4, 1.4]) k.cyl('dark', 0.16, 0.16, 3, sx, -2.2, z, 6);
+  k.cyl('light', 0.08, 0.08, 2.4, 1.4, 0.9, length - 0.4, 6);
+  k.ball('accent', 0.22, 1.4, 3.4, length - 0.4);
+  return k.build();
+}
+
 // ---------- Year gates ----------
 
 export function makeGate(): THREE.Group {
@@ -1116,34 +1588,113 @@ export function makeGate(): THREE.Group {
 
 // ---------- Scenery ----------
 
-/** Trees and rocks, drawn as instances. `spots` holds x, y, z and a size for each one. */
-export function makeScenery(trees: number[][], rocks: number[][]): THREE.Group {
+/** Where the scenery stands: x, y, z and a size for each item. */
+export interface SceneryPlan {
+  pines: number[][];
+  broadleaf: number[][];
+  bushes: number[][];
+  flowers: number[][];
+  grass: number[][];
+  rocks: number[][];
+}
+
+/** Flower colors: a meadow, whatever the theme. */
+const FLOWERS = [0xf2c94c, 0xf28fad, 0xffffff, 0xb59cf2, 0xf2994a];
+
+/** Trees, bushes, flowers, grass and rocks, each kind drawn as one set of instances. */
+export function makeScenery(plan: SceneryPlan, grassColor: number): THREE.Group {
   const group = new THREE.Group();
   const dummy = new THREE.Object3D();
+  const mesh = (build: (k: Kit) => void) => part(build).children[0] as THREE.Mesh;
 
-  const crown = part((k) => {
-    k.cone('tree', 1.05, 2.5, 0, 0.7, 0, 6);
-    k.cone('tree', 0.72, 1.9, 0, 2.2, 0, 6);
-  }).children[0] as THREE.Mesh;
-  const trunk = part((k) => k.cyl('trunk', 0.13, 0.17, 0.8, 0, 0, 0, 5)).children[0] as THREE.Mesh;
-  const stone = part((k) => k.ball('rock', 1, 0, 0.3, 0, 0)).children[0] as THREE.Mesh;
+  const pineCrown = mesh((k) => {
+    k.cone('tree', 1.05, 2.5, 0, 0.7, 0, 10);
+    k.cone('tree', 0.72, 1.9, 0, 2.2, 0, 10);
+  });
+  const trunk = mesh((k) => k.cyl('trunk', 0.13, 0.17, 0.8, 0, 0, 0, 5));
+  const leafy = mesh((k) => {
+    k.ball('tree', 1.15, 0, 1.9, 0, 2);
+    k.ball('tree', 0.8, 0.6, 2.5, 0.3, 2);
+    k.ball('tree', 0.75, -0.55, 2.35, -0.25, 2);
+  });
+  const tallTrunk = mesh((k) => k.cyl('trunk', 0.14, 0.2, 1.6, 0, 0, 0, 5));
+  const bush = mesh((k) => {
+    k.ball('tree', 0.7, 0, 0.35, 0, 1);
+    k.ball('tree', 0.5, 0.55, 0.3, 0.1, 1);
+    k.ball('tree', 0.45, -0.45, 0.28, -0.2, 1);
+  });
+  const stone = mesh((k) => k.ball('rock', 1, 0, 0.3, 0, 1));
+  // Tall grass: five blades from one root, leaning out a little; the wind bends them (see look.ts).
+  const blades = new THREE.Mesh(
+    mergeGeometries(
+      Array.from({ length: 5 }, (_, i) => {
+        const a = (i / 5) * TAU;
+        const blade = new THREE.ConeGeometry(0.07, 1.25, 3).translate(0, 0.62, 0);
+        blade.rotateZ(Math.cos(a) * 0.22).rotateX(Math.sin(a) * 0.22);
+        return blade.translate(Math.cos(a) * 0.1, 0, Math.sin(a) * 0.1).toNonIndexed();
+      }),
+    )!,
+    addSway(new THREE.MeshLambertMaterial({ color: grassColor })),
+  );
 
-  const fill = (source: THREE.Mesh, spots: number[][], squash = 1) => {
-    const mesh = new THREE.InstancedMesh(source.geometry, source.material, spots.length);
-    spots.forEach(([x, y, z, size], i) => {
-      dummy.position.set(x, y, z);
-      dummy.rotation.set(0, (x * 12.9898 + z * 78.233) % TAU, 0);
-      dummy.scale.set(size, size * squash, size);
-      dummy.updateMatrix();
-      mesh.setMatrixAt(i, dummy.matrix);
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    group.add(mesh);
+  // Each kind is cut into blocks of the island, so whatever is out of view is skipped, by the
+  // camera and by the sun's shadow alike.
+  const BLOCK = 110;
+  const fill = (source: THREE.Mesh, spots: number[][], options: { squash?: number; shadow?: boolean; colors?: number[] } = {}) => {
+    const { squash = 1, shadow = true, colors } = options;
+    const material = colors ? new THREE.MeshLambertMaterial() : source.material;
+    const color = new THREE.Color();
+    const blocks = new Map<string, number[][]>();
+    for (const spot of spots) {
+      const key = `${Math.floor(spot[0] / BLOCK)},${Math.floor(spot[2] / BLOCK)}`;
+      const list = blocks.get(key);
+      if (list) list.push(spot);
+      else blocks.set(key, [spot]);
+    }
+    let n = 0;
+    for (const list of blocks.values()) {
+      const inst = new THREE.InstancedMesh(source.geometry, material, list.length);
+      list.forEach(([x, y, z, size], i) => {
+        dummy.position.set(x, y, z);
+        dummy.rotation.set(0, (x * 12.9898 + z * 78.233) % TAU, 0);
+        dummy.scale.set(size, size * squash, size);
+        dummy.updateMatrix();
+        inst.setMatrixAt(i, dummy.matrix);
+        if (colors) inst.setColorAt(i, color.set(colors[n++ % colors.length]));
+      });
+      inst.instanceMatrix.needsUpdate = true;
+      inst.computeBoundingSphere();
+      inst.castShadow = shadow;
+      inst.receiveShadow = true;
+      inst.userData.spots = list;
+      group.add(inst);
+    }
+  };
+  // An explosion: every item within the radius is gone.
+  const zero = new THREE.Matrix4().makeScale(0, 0, 0);
+  group.userData.blast = (x: number, z: number, r: number) => {
+    for (const inst of group.children as THREE.InstancedMesh[]) {
+      const spots = inst.userData.spots as number[][];
+      let hit = false;
+      spots.forEach(([sx, , sz], i) => {
+        if (Math.hypot(sx - x, sz - z) < r) {
+          inst.setMatrixAt(i, zero);
+          hit = true;
+        }
+      });
+      if (hit) inst.instanceMatrix.needsUpdate = true;
+    }
   };
 
-  fill(crown, trees);
-  fill(trunk, trees);
-  fill(stone, rocks, 0.6);
+  fill(pineCrown, plan.pines);
+  fill(trunk, plan.pines, { shadow: false });
+  fill(leafy, plan.broadleaf);
+  fill(tallTrunk, plan.broadleaf, { shadow: false });
+  fill(bush, plan.bushes, { squash: 0.8, shadow: false });
+  fill(stone, plan.rocks, { squash: 0.6, shadow: false });
+  fill(blades, plan.grass, { shadow: false });
+  const petal = new THREE.Mesh(new THREE.IcosahedronGeometry(0.16, 0));
+  fill(petal, plan.flowers, { shadow: false, colors: FLOWERS });
   return group;
 }
 

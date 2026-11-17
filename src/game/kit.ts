@@ -1,7 +1,8 @@
-// A small construction kit for the low-poly models: primitives are placed one by one, then every
-// piece that shares a material is merged into a single mesh, so a whole building costs a few draw calls.
+// A small construction kit for the models: primitives are placed one by one, then every piece
+// that shares a material is merged into a single mesh, so a whole building costs a few draw calls.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { mat, type MatKey } from './palette';
 
 const _m = new THREE.Matrix4();
@@ -32,9 +33,14 @@ export class Kit {
     return this.place(key, geometry);
   }
 
-  /** A box standing on height y. */
+  /**
+   * A box standing on height y. Boxes of some size get softly rounded edges, like a toy; thin ones
+   * (window strips, stripes, rails) stay plain, which keeps the triangle count down.
+   */
   box(key: MatKey, w: number, h: number, d: number, x: number, y: number, z: number, ry = 0): this {
-    return this.put(key, new THREE.BoxGeometry(w, h, d), x, y + h / 2, z, 0, ry, 0);
+    const least = Math.min(w, h, d);
+    const geometry = least >= 0.45 ? new RoundedBoxGeometry(w, h, d, 1, Math.min(0.35, least * 0.2)) : new THREE.BoxGeometry(w, h, d);
+    return this.put(key, geometry, x, y + h / 2, z, 0, ry, 0);
   }
 
   /** An upright cylinder or cone frustum standing on height y. */
@@ -46,8 +52,8 @@ export class Kit {
     return this.put(key, new THREE.ConeGeometry(r, h, sides), x, y + h / 2, z);
   }
 
-  /** A sphere centred on the point. */
-  ball(key: MatKey, r: number, x: number, y: number, z: number, detail = 1): this {
+  /** A sphere centred on the point: smooth enough for soft shading. */
+  ball(key: MatKey, r: number, x: number, y: number, z: number, detail = 2): this {
     return this.put(key, new THREE.IcosahedronGeometry(r, detail), x, y, z);
   }
 
